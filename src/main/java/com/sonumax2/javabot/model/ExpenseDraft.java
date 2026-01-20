@@ -26,17 +26,4 @@ public class ExpenseDraft {
     // Telegram file_id (если фото одно). Если хочешь несколько — сделаем List<String>.
     public String photoFileId;
 
-    public void clearData() {
-        objectId = null;
-        nomenclatureId = null;
-        counterpartyId = null;
-        counterpartyKind = null;
-        counterpartyRawName = null;
-        amount = null;
-        date = null;
-        note = null;
-        photoFileId = null;
-        returnToConfirm = false;
-        pendingNomenclatureName = null;
-    }
 }

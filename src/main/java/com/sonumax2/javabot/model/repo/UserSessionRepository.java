@@ -6,5 +6,5 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.Optional;
 
 public interface UserSessionRepository extends ListCrudRepository<UserSession, Long> {
-    Optional<UserSession> findByChatId(Long chatId);
+    Optional<UserSession> findByChatId(long chatId);
 }

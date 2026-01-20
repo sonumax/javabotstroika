@@ -70,12 +70,11 @@ public class ExpenseCb {
     public static boolean isCounterpartyBackPick (String data) { return Cb.is(data, counterpartyBack()); }
     public static boolean isCreateCounterpartyBackPick (String data) { return Cb.is(data, createCounterpartyBack()); }
 
-
     public static String datePrefix()   { return Cb.makeCb(NS, CbParts.DATE); }
     public static String errorDateBack() { return Cb.makeCb(datePrefix(), CbParts.ERR, CbParts.BACK); }
     public static String manualDateBack() { return Cb.makeCb(datePrefix(), CbParts.MANUAL, CbParts.BACK);}
 
-    public static boolean isDate(String data) { return data != null && data.startsWith(datePrefix()); }
+    public static boolean isDate(String data) { return Cb.startsWith(data, datePrefix()); }
     public static boolean isDateManualPick(String data) {return Cb.is(data, datePrefix(), CbParts.MANUAL);}
     public static boolean isDateYesterdayPick(String data) {return Cb.is(data, datePrefix(), CbParts.YESTERDAY);}
     public static boolean isDateErrorBackPick(String data) {return Cb.is(data, errorDateBack()); }

@@ -1,8 +1,10 @@
 package com.sonumax2.javabot.service.bot;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.sonumax2.javabot.model.user.UserDraft;
 import com.sonumax2.javabot.model.repo.UserDraftRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -11,12 +13,15 @@ import java.util.Optional;
 @Service
 public class DraftService {
 
-    private final UserDraftRepository repo;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final Logger log = LoggerFactory.getLogger(DraftService.class);
 
-    public DraftService(UserDraftRepository repo) {
+    private final UserDraftRepository repo;
+    private final ObjectMapper objectMapper;
+
+
+    public DraftService(UserDraftRepository repo, ObjectMapper objectMapper) {
         this.repo = repo;
-        objectMapper.findAndRegisterModules();
+        this.objectMapper = objectMapper;
     }
 
     public <T> Optional<T> find(Long chatId, String draftType, Class<T> type) {
@@ -67,6 +72,7 @@ public class DraftService {
         try {
             return Optional.ofNullable(objectMapper.readValue(json, type));
         } catch (Exception e) {
+            log.warn("Failed to read draft json for type={}", type.getName(), e);
             return Optional.empty();
         }
     }

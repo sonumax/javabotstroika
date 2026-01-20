@@ -16,7 +16,7 @@ public class UserSessionService {
         this.userSessionRepository = userSessionRepository;
     }
 
-    private UserSession getOnCreateUserSession(Long chatId) {
+    private UserSession getOnCreateUserSession(long chatId) {
         Optional<UserSession> userSession = userSessionRepository.findByChatId(chatId);
         return userSession.orElseGet(() -> {
             UserSession newSession = new UserSession();
@@ -27,21 +27,21 @@ public class UserSessionService {
         });
     }
 
-    public UserState getUserState(Long chatId) {
+    public UserState getUserState(long chatId) {
         return getOnCreateUserSession(chatId).getUserState();
     }
 
-    public Locale getLocale(Long chatId) {
+    public Locale getLocale(long chatId) {
         return Locale.forLanguageTag(getOnCreateUserSession(chatId).getLocale());
     }
 
-    public void setLocale(Long chatId, String locale) {
+    public void setLocale(long chatId, String locale) {
         UserSession userSession = getOnCreateUserSession(chatId);
         userSession.setLocale(locale);
         userSessionRepository.save(userSession);
     }
 
-    public void setUserState (Long chatId, UserState userState) {
+    public void setUserState(long chatId, UserState userState) {
         UserSession userSession = getOnCreateUserSession(chatId);
         userSession.setUserState(userState);
         userSessionRepository.save(userSession);

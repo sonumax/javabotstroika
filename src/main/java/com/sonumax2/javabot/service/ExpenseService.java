@@ -27,10 +27,16 @@ public class ExpenseService {
 
     @Transactional
     public Expense saveDetail(long operationId, long objectId, long nomenclatureId, Long counterpartyId) {
-        Expense e = new Expense(operationId, objectId, nomenclatureId, counterpartyId);
+        Expense e = expenseRepo.findByOperationId(operationId).orElse(null);
+        if (e == null) {
+            e = new Expense(operationId, objectId, nomenclatureId, counterpartyId);
+        } else {
+            e.setObjectId(objectId);
+            e.setNomenclatureId(nomenclatureId);
+            e.setCounterpartyId(counterpartyId);
+        }
         return expenseRepo.save(e);
     }
-
 
     @Transactional
     public Expense setCounterparty(long operationId, Long counterpartyId) {
@@ -71,7 +77,7 @@ public class ExpenseService {
     }
 
 
-    public List<Counterparty> suggestSuppliers(long nomId, int limit) {
+    public List<Counterparty> suggestCounterparty(long nomId, int limit) {
         LinkedHashSet<Long> ids = new LinkedHashSet<>();
 
         for (Long id : expenseRepo.topCounterpartyIdsByNomenclature(nomId, limit)) {

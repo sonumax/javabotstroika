@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-init" author="max">
+
+        <!-- ===================== user_session ===================== -->
+        <createTable tableName="user_session">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="chat_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="locale" type="VARCHAR(20)"/>
+            <column name="first_name" type="VARCHAR(255)"/>
+
+            <column name="user_state" type="VARCHAR(32)" defaultValue="IDLE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint tableName="user_session"
+                             columnNames="chat_id"
+                             constraintName="uk_user_session_chat_id"/>
+
+        <!-- ===================== operation ===================== -->
+        <createTable tableName="operation">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="chat_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="op_type" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="op_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="amount" type="NUMERIC(14,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="note" type="TEXT"/>
+
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- edit/cancel/export -->
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="updated_by" type="BIGINT"/>
+
+            <column name="is_cancelled" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="cancelled_at" type="TIMESTAMP"/>
+            <column name="cancelled_by" type="BIGINT"/>
+            <column name="cancel_reason" type="TEXT"/>
+
+            <column name="exported_at" type="TIMESTAMP"/>
+
+            <!-- photo -->
+            <column name="photo_file_id" type="TEXT"/>
+        </createTable>
+
+        <createIndex tableName="operation" indexName="idx_operation_chat_date">
+            <column name="chat_id"/>
+            <column name="op_date"/>
+        </createIndex>
+
+        <sql>
+            CREATE INDEX idx_operation_export
+            ON operation (exported_at, created_at)
+            WHERE is_cancelled = FALSE;
+        </sql>
+
+        <!-- ===================== user_draft ===================== -->
+        <createTable tableName="user_draft">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="chat_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="draft_type" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="data_json" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint tableName="user_draft"
+                             columnNames="chat_id,draft_type"
+                             constraintName="uk_user_draft_chat_type"/>
+
+        <!-- ===================== work_object ===================== -->
+        <createTable tableName="work_object">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="name_norm" type="VARCHAR(160)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_by_chat_id" type="BIGINT"/>
+
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            CREATE UNIQUE INDEX ux_work_object_name_norm_active
+            ON work_object (name_norm)
+            WHERE is_active = true;
+        </sql>
+
+        <sql>
+            CREATE INDEX ix_work_object_is_active
+            ON work_object (is_active);
+        </sql>
+
+        <!-- ===================== counterparty ===================== -->
+        <createTable tableName="counterparty">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="name_norm" type="VARCHAR(160)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="kind" type="VARCHAR(32)" defaultValue="OTHER">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_by_chat_id" type="BIGINT"/>
+
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            CREATE UNIQUE INDEX ux_counterparty_name_norm_active
+            ON counterparty (name_norm)
+            WHERE is_active = true;
+        </sql>
+
+        <sql>
+            CREATE INDEX ix_counterparty_kind_active
+            ON counterparty (kind, is_active);
+        </sql>
+
+        <sql>
+            ALTER TABLE counterparty
+            ADD CONSTRAINT chk_counterparty_kind
+            CHECK (kind IN ('FUEL','STORE','MATERIALS','SERVICE','COMPANY','OTHER'));
+        </sql>
+
+        <!-- ===================== nomenclature ===================== -->
+        <createTable tableName="nomenclature">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="name_norm" type="VARCHAR(160)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_by_chat_id" type="BIGINT"/>
+
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            CREATE UNIQUE INDEX ux_nomenclature_name_norm_active
+            ON nomenclature (name_norm)
+            WHERE is_active = true;
+        </sql>
+
+        <createIndex tableName="nomenclature" indexName="ix_nomenclature_name">
+            <column name="name"/>
+        </createIndex>
+
+        <!-- ===================== expense ===================== -->
+        <createTable tableName="expense">
+            <column name="operation_id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="object_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="nomenclature_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="counterparty_id" type="BIGINT"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="expense" baseColumnNames="operation_id"
+                referencedTableName="operation" referencedColumnNames="id"
+                constraintName="fk_expense_operation"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="expense" baseColumnNames="object_id"
+                referencedTableName="work_object" referencedColumnNames="id"
+                constraintName="fk_expense_object"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="expense" baseColumnNames="nomenclature_id"
+                referencedTableName="nomenclature" referencedColumnNames="id"
+                constraintName="fk_expense_nomenclature"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="expense" baseColumnNames="counterparty_id"
+                referencedTableName="counterparty" referencedColumnNames="id"
+                constraintName="fk_expense_counterparty"
+                onDelete="SET NULL"/>
+
+        <createIndex tableName="expense" indexName="idx_expense_nom">
+            <column name="nomenclature_id"/>
+        </createIndex>
+
+        <createIndex tableName="expense" indexName="idx_expense_cp">
+            <column name="counterparty_id"/>
+        </createIndex>
+
+        <createIndex tableName="expense" indexName="idx_expense_obj">
+            <column name="object_id"/>
+        </createIndex>
+
+        <createIndex tableName="expense" indexName="idx_expense_nom_cp">
+            <column name="nomenclature_id"/>
+            <column name="counterparty_id"/>
+        </createIndex>
+
+        <createIndex tableName="expense" indexName="idx_expense_nom_op">
+            <column name="nomenclature_id"/>
+            <column name="operation_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

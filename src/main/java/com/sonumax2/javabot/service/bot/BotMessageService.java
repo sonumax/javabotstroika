@@ -12,6 +12,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 
 import java.io.Serializable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Service
 public class BotMessageService {
@@ -29,7 +31,21 @@ public class BotMessageService {
     public <T extends Serializable> T execute(BotApiMethod<T> method) {
         CompletableFuture<Serializable> future = new CompletableFuture<>();
         publisher.publishEvent(new MessageEvent(this, (BotApiMethod) method, future));
-        return (T) future.join();
+        try {
+            return (T) future.get(10, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Telegram execute timeout: " + method.getClass().getSimpleName(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Telegram execute failed: " + method.getClass().getSimpleName(), e);
+        }
+    }
+
+    public void safeDelete(long chatId, int messageId) {
+        try {
+            delete(chatId, messageId);
+        } catch (Exception ignored) {
+            // лучше логгером warn, но хотя бы так
+        }
     }
 
     public void delete(long chatId, int messageId) {

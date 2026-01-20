@@ -3,6 +3,7 @@ package com.sonumax2.javabot.events;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethod;
@@ -19,7 +20,7 @@ public class EventsListener {
     private final TelegramClient telegramClient;
     private final Executor telegramExecutor;
 
-    public EventsListener(TelegramClient telegramClient, Executor telegramExecutor) {
+    public EventsListener(TelegramClient telegramClient, @Qualifier("telegramExecutor") Executor telegramExecutor) {
         this.telegramClient = telegramClient;
         this.telegramExecutor = telegramExecutor;
     }

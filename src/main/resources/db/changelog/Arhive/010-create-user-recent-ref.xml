@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="010-create-user-recent-ref" author="max">
+        <createTable tableName="user_recent_ref">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="chat_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ref_type" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ref_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="user_recent_ref"
+                columnNames="chat_id,ref_type,ref_id"
+                constraintName="uq_recent_ref_chat_type_id"/>
+
+        <createIndex tableName="user_recent_ref" indexName="ix_recent_ref_chat_type_updated">
+            <column name="chat_id"/>
+            <column name="ref_type"/>
+            <column name="updated_at"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- (опционально) защита ref_type -->
+    <changeSet id="010-chk-user-recent-ref-type" author="max">
+        <sql>
+            ALTER TABLE user_recent_ref
+            ADD CONSTRAINT chk_recent_ref_type
+            CHECK (ref_type IN ('WORK_OBJECT','NOMENCLATURE','COUNTERPARTY'));
+        </sql>
+        <rollback>
+            ALTER TABLE user_recent_ref
+            DROP CONSTRAINT IF EXISTS chk_recent_ref_type;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="014-work-object-fix-ux-name-norm-active" author="max">
+
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="work_object"/>
+                <columnExists tableName="work_object" columnName="name_norm"/>
+                <indexExists indexName="ux_work_object_name_norm_active"/>
+            </and>
+        </preConditions>
+
+        <dropIndex indexName="ux_work_object_name_norm_active" tableName="work_object"/>
+
+        <sql>
+            CREATE UNIQUE INDEX ux_work_object_name_norm_active
+            ON work_object (name_norm)
+            WHERE is_active = true;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

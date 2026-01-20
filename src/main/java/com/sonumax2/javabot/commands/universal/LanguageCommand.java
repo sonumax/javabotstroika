@@ -35,7 +35,7 @@ public class LanguageCommand implements Command {
             String data = update.getCallbackQuery().getData();
             return Cb.is(data, CbParts.LANG) || Cb.startsWith(data, CbParts.LANG);
         }
-        return extractCommand(update).filter(cmd -> cmd.startsWith("/lang")).isPresent();
+        return extractCommand(update).filter(cmd -> cmd.startsWith("lang")).isPresent();
     }
 
     @Override

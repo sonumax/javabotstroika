@@ -3,13 +3,12 @@ package com.sonumax2.javabot.service;
 import com.sonumax2.javabot.model.reference.Counterparty;
 import com.sonumax2.javabot.model.reference.CounterpartyKind;
 import com.sonumax2.javabot.model.repo.CounterpartyRepository;
+import com.sonumax2.javabot.util.NameNormUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -30,56 +29,53 @@ public class CounterpartyService {
     }
 
     public List<Counterparty> listActiveTop50() {
-        return repo.findByActiveTrueOrderByNameAsc(PageRequest.of(0, 50));
+        return repo.activeList(50);
     }
 
     public List<Counterparty> listActiveTop50(CounterpartyKind kind) {
-        return repo.findByActiveTrueAndKindOrderByNameAsc(kindOrDefault(kind), PageRequest.of(0, 50));
+        return repo.activeListByKind(kindOrDefault(kind), 50);
     }
 
     public List<Counterparty> recentByChat(long chatId, int limit) {
-        return repo.findByActiveTrueAndCreatedByChatIdOrderByCreatedAtDesc(chatId, PageRequest.of(0, limit));
+        return repo.recentCreatedByChat(chatId, limit);
     }
 
     public List<Counterparty> search(String rawName, int limit) {
-        String ui = normalizeUi(rawName);
+        String ui = NameNormUtils.normalizeUi(rawName);
         if (ui.isBlank()) return List.of();
-        return repo.findByActiveTrueAndNameContainingIgnoreCaseOrderByNameAsc(ui, PageRequest.of(0, limit));
+        return repo.searchActiveByName(ui, limit);
     }
 
     public List<Counterparty> search(CounterpartyKind kind, String rawName, int limit) {
-        String ui = normalizeUi(rawName);
+        String ui = NameNormUtils.normalizeUi(rawName);
         if (ui.isBlank()) return List.of();
-        return repo.findByActiveTrueAndKindAndNameContainingIgnoreCaseOrderByNameAsc(
-                kindOrDefault(kind), ui, PageRequest.of(0, limit)
-        );
+        return repo.searchActiveByKindAndName(kindOrDefault(kind), ui, limit);
     }
 
-
     public Optional<Counterparty> findExact(String raw) {
-        String ui = normalizeUi(raw);
+        String ui = NameNormUtils.normalizeUi(raw);
         if (ui.isBlank()) return Optional.empty();
-        return repo.findFirstByActiveTrueAndNameNorm(normalizeNorm(ui));
+        return repo.findFirstByActiveTrueAndNameNorm(NameNormUtils.normalizeNorm(ui));
     }
 
     public Optional<Counterparty> findExact(CounterpartyKind kind, String raw) {
-        String ui = normalizeUi(raw);
+        String ui = NameNormUtils.normalizeUi(raw);
         if (ui.isBlank()) return Optional.empty();
-        return repo.findFirstByActiveTrueAndKindAndNameNorm(kindOrDefault(kind), normalizeNorm(ui));
+        return repo.findFirstByActiveTrueAndKindAndNameNorm(kindOrDefault(kind), NameNormUtils.normalizeNorm(ui));
     }
 
     public Counterparty getOrCreate(String rawName, CounterpartyKind kind, long chatId) {
-        String ui = normalizeUi(rawName);
+        String ui = NameNormUtils.normalizeUi(rawName);
         if (ui.isBlank()) throw new IllegalArgumentException("counterparty name is blank");
 
         CounterpartyKind k = kindOrDefault(kind);
-        String norm = normalizeNorm(ui);
+        String norm = NameNormUtils.normalizeNorm(ui);
 
-        // 1) Уникальность по active+name_norm без kind -> ищем так
+        // 1) уникальность среди активных по name_norm (без kind)
         Optional<Counterparty> active = repo.findFirstByActiveTrueAndNameNorm(norm);
         if (active.isPresent()) {
             Counterparty cp = active.get();
-            // мягкий апгрейд kind: если было OTHER, а теперь уточнили — обновим
+            // мягкий апгрейд kind
             if (cp.getKind() == CounterpartyKind.OTHER && k != CounterpartyKind.OTHER) {
                 cp.setKind(k);
                 return repo.save(cp);
@@ -87,7 +83,7 @@ public class CounterpartyService {
             return cp;
         }
 
-        // 2) Если есть неактивный — реактивируем (берём самый свежий дубль)
+        // 2) если есть неактивный — реактивируем самый свежий дубль
         Optional<Counterparty> any = repo.findTop1ByNameNormOrderByIdDesc(norm);
         if (any.isPresent()) {
             Counterparty cp = any.get();
@@ -98,25 +94,23 @@ public class CounterpartyService {
                 try {
                     return repo.save(cp);
                 } catch (DataIntegrityViolationException e) {
-                    // если параллельно активировали/создали — возвращаем активный
                     return repo.findFirstByActiveTrueAndNameNorm(norm).orElseThrow(() -> e);
                 }
             }
         }
 
-        // 3) Создаём новый
+        // 3) создаём новый
         Counterparty cp = new Counterparty();
         cp.setName(ui);
         cp.setNameNorm(norm);
         cp.setKind(k);
         cp.setActive(true);
         cp.setCreatedByChatId(chatId);
-        cp.setCreatedAt(Instant.now()); // как в NomenclatureService (Spring Data JDBC)
+        cp.setCreatedAt(Instant.now());
 
         try {
             return repo.save(cp);
         } catch (DataIntegrityViolationException e) {
-            // если параллельно создали — забираем существующий
             return repo.findFirstByActiveTrueAndNameNorm(norm).orElseThrow(() -> e);
         }
     }
@@ -127,13 +121,5 @@ public class CounterpartyService {
 
     private static CounterpartyKind kindOrDefault(CounterpartyKind kind) {
         return kind == null ? CounterpartyKind.OTHER : kind;
-    }
-
-    public static String normalizeUi(String s) {
-        return s == null ? "" : s.trim().replaceAll("\\s+", " ");
-    }
-
-    public static String normalizeNorm(String s) {
-        return normalizeUi(s).toLowerCase(Locale.ROOT);
     }
 }

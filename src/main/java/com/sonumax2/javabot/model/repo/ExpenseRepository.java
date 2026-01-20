@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public interface ExpenseRepository extends ListCrudRepository<Expense, Long> {
 
-    List<Expense> findByObjectId(Long objectId);
-    List<Expense> findByNomenclatureId(Long nomenclatureId);
-    List<Expense> findByCounterpartyId(Long counterpartyId);
-    List<Expense> findByObjectIdAndNomenclatureId(Long objectId, Long nomenclatureId);
+    List<Expense> findByObjectId(long objectId);
+    List<Expense> findByNomenclatureId(long nomenclatureId);
+    List<Expense> findByCounterpartyId(long counterpartyId);
+    List<Expense> findByObjectIdAndNomenclatureId(long objectId, long nomenclatureId);
     Optional<Expense> findByOperationId(long operationId);
     boolean existsByOperationId(long operationId);
 

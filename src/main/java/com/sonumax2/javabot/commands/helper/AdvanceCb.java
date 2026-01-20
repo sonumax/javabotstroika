@@ -32,7 +32,7 @@ public final class AdvanceCb {
     public static String dateIso(String data)     { return Cb.tail(data, datePrefix()); } // вернёт yyyy-mm-dd
     public static String getConfirmAction(String data)  { return Cb.tail(data, confirmPrefix()); }
 
-    public static boolean isDatePick(String data) { return data != null && data.startsWith(datePrefix()); }
+    public static boolean isDatePick(String data) { return Cb.startsWith(data, datePrefix()); }
     public static boolean isDateManualPick(String data) {return Cb.is(data, datePrefix(), CbParts.MANUAL);}
     public static boolean isDateYesterdayPick(String data) {return Cb.is(data, datePrefix(), CbParts.YESTERDAY);}
     public static boolean isDateErrorBackPick(String data) {return Cb.is(data, errorDateBack()); }

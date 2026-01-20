@@ -5,7 +5,6 @@ import com.sonumax2.javabot.model.repo.OperationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -19,8 +18,8 @@ public class OperationService {
         this.repo = repo;
     }
 
-    public List<Operation> myRecent24h(Long chatId) {
-        return repo.findTop10ByChatIdAndCancelledFalseAndCreatedAtAfterOrderByCreatedAtDesc(
+    public List<Operation> myRecent24h(long chatId) {
+        return repo.findTop10ByChatIdAndIsCancelledFalseAndCreatedAtAfterOrderByCreatedAtDesc(
                 chatId, LocalDateTime.now().minusHours(24)
         );
     }
@@ -31,7 +30,7 @@ public class OperationService {
     }
 
     public Optional<Operation> myLastActive(long chatId) {
-        return repo.findTop1ByChatIdAndCancelledFalseOrderByCreatedAtDesc(chatId);
+        return repo.findTop1ByChatIdAndIsCancelledFalseOrderByCreatedAtDesc(chatId);
     }
 
     @Transactional

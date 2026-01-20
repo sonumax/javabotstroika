@@ -6,6 +6,7 @@
           http://www.liquibase.org/xml/ns/dbchangelog
           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <include file="001-init.xml" relativeToChangelogFile="true"/>
-
+    <changeSet id="010-create-user-recent-ref" author="max">
+        <dropTable tableName="user_recent_ref" cascadeConstraints="true"/>
+    </changeSet>
 </databaseChangeLog>

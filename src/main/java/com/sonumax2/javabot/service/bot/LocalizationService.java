@@ -17,7 +17,7 @@ public class LocalizationService {
     }
 
     public String getLocaleMessage(
-            Long chatId,
+            long chatId,
             String key,
             Object... args
     ) {

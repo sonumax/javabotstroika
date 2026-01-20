@@ -102,11 +102,11 @@ public class KeyboardService {
             InlineKeyboardRow r = new InlineKeyboardRow();
 
             T a = list.get(i);
-            r.add(btnText(a.getName(), Cb.makeCb(pickPrefix, a.getId())));
+            r.add(btnText(cutBtnText(a.getName()), Cb.makeCb(pickPrefix, a.getId())));
 
             if (i + 1 < list.size()) {
                 T b = list.get(i + 1);
-                r.add(btnText(b.getName(), Cb.makeCb(pickPrefix, b.getId())));
+                r.add(btnText(cutBtnText(b.getName()), Cb.makeCb(pickPrefix, b.getId())));
             }
 
             rows.add(r);
@@ -126,7 +126,7 @@ public class KeyboardService {
         List<InlineKeyboardRow> rows = new ArrayList<>();
 
         for (T item : list) {
-            rows.add(row(btnText(item.getName(), Cb.makeCb(pickPrefix, item.getId()))));
+            rows.add(row(btnText(cutBtnText(item.getName()), Cb.makeCb(pickPrefix, item.getId()))));
         }
 
         rows.add(row(btn(chatId, "add", addCallback)));
@@ -199,6 +199,12 @@ public class KeyboardService {
                 .text(text)
                 .callbackData(data)
                 .build();
+    }
+
+    private String cutBtnText(String s) {
+        if (s == null) return "";
+        int max = 50; // можно 60, но я бы держал запас
+        return s.length() <= max ? s : s.substring(0, max - 1) + "…";
     }
 
 }

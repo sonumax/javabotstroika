@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="004-operation-edit-cancel-export" author="max">
+        <sql>
+            ALTER TABLE operation
+            ADD COLUMN IF NOT EXISTS updated_at   TIMESTAMP,
+            ADD COLUMN IF NOT EXISTS updated_by   BIGINT,
+            ADD COLUMN IF NOT EXISTS is_cancelled BOOLEAN NOT NULL DEFAULT FALSE,
+            ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP,
+            ADD COLUMN IF NOT EXISTS cancelled_by BIGINT,
+            ADD COLUMN IF NOT EXISTS cancel_reason TEXT,
+            ADD COLUMN IF NOT EXISTS exported_at  TIMESTAMP;
+        </sql>
+
+        <sql>
+            CREATE INDEX IF NOT EXISTS idx_operation_export
+            ON operation (exported_at, created_at)
+            WHERE is_cancelled = FALSE;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

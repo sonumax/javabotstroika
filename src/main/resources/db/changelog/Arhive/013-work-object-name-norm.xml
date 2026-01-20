@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="013-work-object-add-name-norm" author="max">
+        <addColumn tableName="work_object">
+            <column name="name_norm" type="VARCHAR(160)"/>
+        </addColumn>
+
+        <sql>
+            UPDATE work_object
+            SET name_norm = lower(regexp_replace(btrim(name), E'\\s+', ' ', 'g'))
+            WHERE name_norm IS NULL;
+        </sql>
+
+        <addNotNullConstraint tableName="work_object" columnName="name_norm" columnDataType="VARCHAR(160)"/>
+    </changeSet>
+
+    <changeSet id="013-work-object-ux-name-norm-active" author="max">
+        <sql>
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_work_object_name_norm_active
+            ON work_object (name_norm)
+            WHERE is_active = true;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

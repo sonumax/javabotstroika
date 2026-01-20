@@ -12,6 +12,8 @@ public class Expense {
     @Column("nomenclature_id") private Long nomenclatureId;
     @Column("counterparty_id") private Long counterpartyId; // nullable
 
+    public Expense() {}
+
     public Expense(Long operationId, Long objectId, Long nomenclatureId, Long counterpartyId) {
         this.operationId = operationId;
         this.objectId = objectId;

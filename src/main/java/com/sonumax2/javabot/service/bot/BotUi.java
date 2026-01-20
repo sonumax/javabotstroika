@@ -29,11 +29,13 @@ public class BotUi {
     }
 
     public void sendText(long chatId, String text, ReplyKeyboard kb) {
-        bot.send(SendMessage.builder()
+        var b = SendMessage.builder()
                 .chatId(String.valueOf(chatId))
-                .text(text)
-                .replyMarkup(kb)
-                .build());
+                .text(text);
+
+        if (kb != null) b.replyMarkup(kb);
+
+        bot.send(b.build());
     }
 
     public void sendKey(long chatId, String key, ReplyKeyboard kb, Object... args) {
@@ -68,7 +70,7 @@ public class BotUi {
 
     /* -------- delete -------- */
     public void delete(long chatId, int messageId) {
-        bot.delete(chatId, messageId);
+        bot.safeDelete(chatId, messageId);
     }
 
     public int sendKeyReturnId(long chatId, String key, ReplyKeyboard kb, Object... args) {
@@ -102,7 +104,7 @@ public class BotUi {
         int newId = m.getMessageId();
 
         if (oldMessageId != null && oldMessageId != newId) {
-            bot.delete(chatId, oldMessageId);
+            bot.safeDelete(chatId, oldMessageId);
         }
         return newId;
     }
