@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="006-create-work-object" author="max">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="work_object"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="work_object">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_by_chat_id" type="BIGINT"/>
+
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- Уникальность по нормализованному имени только среди активных -->
+    <changeSet id="006-ux-work-object-name-norm-active" author="max">
+        <sql>
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_work_object_name_norm_active
+            ON work_object (
+                lower(regexp_replace(btrim(name), E'\\s+', ' ', 'g'))
+            )
+            WHERE is_active = true;
+        </sql>
+    </changeSet>
+
+    <changeSet id="006-ix-work-object-active" author="max">
+        <sql>
+            CREATE INDEX IF NOT EXISTS ix_work_object_is_active
+            ON work_object (is_active);
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

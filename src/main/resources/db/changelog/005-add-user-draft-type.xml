@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="005-add-user-draft-type" author="max">
+
+        <!-- 0) Снимаем старую уникальность (1 draft на чат) -->
+        <dropUniqueConstraint
+                tableName="user_draft"
+                constraintName="uk_user_draft_chat_id"/>
+
+        <!-- 1) Добавляем колонку draft_type (пока nullable) -->
+        <addColumn tableName="user_draft">
+            <column name="draft_type" type="VARCHAR(64)"/>
+        </addColumn>
+
+        <!-- 2) Заполняем существующие строки дефолтом -->
+        <update tableName="user_draft">
+            <column name="draft_type" value="ADVANCE"/>
+            <where>draft_type IS NULL</where>
+        </update>
+
+        <!-- 3) Делаем NOT NULL -->
+        <addNotNullConstraint
+                tableName="user_draft"
+                columnName="draft_type"
+                columnDataType="VARCHAR(64)"/>
+
+        <!-- 4) Делаем новую уникальность (chat_id + draft_type) -->
+        <addUniqueConstraint
+                tableName="user_draft"
+                columnNames="chat_id,draft_type"
+                constraintName="uk_user_draft_chat_type"/>
+
+    </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="008-counterparty-add-name-norm" author="max">
+        <addColumn tableName="counterparty">
+            <column name="name_norm" type="VARCHAR(160)"/>
+        </addColumn>
+
+        <!-- заполнить для существующих строк -->
+        <sql>
+            UPDATE counterparty
+            SET name_norm = lower(regexp_replace(btrim(name), E'\\s+', ' ', 'g'))
+            WHERE name_norm IS NULL;
+        </sql>
+
+        <addNotNullConstraint tableName="counterparty" columnName="name_norm" columnDataType="VARCHAR(160)"/>
+    </changeSet>
+
+    <!-- убираем старый уникальный индекс по выражению (если он у тебя есть) -->
+    <changeSet id="008-counterparty-drop-old-ux" author="max">
+        <preConditions onFail="MARK_RAN">
+            <indexExists indexName="ux_counterparty_name_norm_active" tableName="counterparty"/>
+        </preConditions>
+        <dropIndex indexName="ux_counterparty_name_norm_active" tableName="counterparty"/>
+    </changeSet>
+
+    <!-- новый уникальный индекс уже по колонке name_norm -->
+    <changeSet id="008-counterparty-ux-name-norm-active" author="max">
+        <sql>
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_counterparty_name_norm_active
+            ON counterparty (name_norm)
+            WHERE is_active = true;
+        </sql>
+    </changeSet>
+
+
+
+</databaseChangeLog>
