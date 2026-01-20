@@ -4,6 +4,8 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+docker-compose.yml
+
 /target/
 /out/
 *.log
@@ -24,6 +26,7 @@ Thumbs.db
 # Env / secrets
 .env
 application-local.yml
+src/main/resources/application.properties
 application-local.properties
 
 ### IntelliJ IDEA ###
