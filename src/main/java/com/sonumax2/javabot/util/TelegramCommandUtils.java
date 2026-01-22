@@ -1,6 +1,6 @@
 package com.sonumax2.javabot.util;
 
-import com.sonumax2.javabot.model.reference.BaseRefEntity;
+import com.sonumax2.javabot.domain.reference.BaseRefEntity;
 import org.telegram.telegrambots.meta.api.objects.MessageEntity;
 import org.telegram.telegrambots.meta.api.objects.Update;
 

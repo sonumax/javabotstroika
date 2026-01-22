@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="002-alter-user-session-user-state" author="max">
+        <modifyDataType tableName="user_session" columnName="user_state" newDataType="VARCHAR(80)"/>
+        <modifyDataType tableName="user_session" columnName="first_name" newDataType="VARCHAR(128)"/>
+
+        <addColumn tableName="user_session">
+            <column name="username" type="VARCHAR(64)"/>
+        </addColumn>
+
+        <rollback>
+            <modifyDataType tableName="user_session" columnName="user_state" newDataType="VARCHAR(32)"/>
+            <modifyDataType tableName="user_session" columnName="first_name" newDataType="VARCHAR(32)"/>
+            <dropColumn tableName="user_session" columnName="username"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
