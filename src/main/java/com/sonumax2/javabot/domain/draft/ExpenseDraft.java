@@ -20,12 +20,13 @@ public class ExpenseDraft {
 
     // nomenclature
     public Long nomenclatureId;
-    public String pendingNomenclatureName; // когда создаём новую, но ещё не сохранили справочник
+    public String pendingNomenclatureName;
 
     // counterparty
     public Long counterpartyId;
-    public CounterpartyKind counterpartyKind; // если при создании выбираешь kind
-    public String counterpartyRawName;        // ввод имени при создании
+    public String pendingCounterpartyName;
+    public CounterpartyKind counterpartyKind;
+    public String counterpartyRawName;
 
     // common fields
     public BigDecimal amount;

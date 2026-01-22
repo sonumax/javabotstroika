@@ -20,6 +20,7 @@ public enum UserState {
 
     EXPENSE_WAIT_CP_PICK,
     EXPENSE_WAIT_CP_TEXT,
+    EXPENSE_WAIT_CP_SUGGEST,
     EXPENSE_WAIT_CP_KIND, // выбирать тип
 
     EXPENSE_WAIT_AMOUNT,

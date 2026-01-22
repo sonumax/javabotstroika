@@ -13,6 +13,7 @@ public class UserSession {
     @Column("first_name") private String firstName;
     @Column("user_state") private UserState userState;
     @Column("username") private String username;
+    @Column("panel_message_id") private Long panelMessageId;
 
     public UserState getUserState() {
         return userState;
@@ -51,4 +52,7 @@ public class UserSession {
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
+
+    public Long getPanelMessageId() { return panelMessageId; }
+    public void setPanelMessageId(Long panelMessageId) { this.panelMessageId = panelMessageId; }
 }

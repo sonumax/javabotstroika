@@ -2,6 +2,7 @@ package com.sonumax2.javabot.domain.reference.sevrice;
 
 import com.sonumax2.javabot.domain.reference.Counterparty;
 import com.sonumax2.javabot.domain.reference.CounterpartyKind;
+import com.sonumax2.javabot.domain.reference.Nomenclature;
 import com.sonumax2.javabot.domain.reference.repo.CounterpartyRepository;
 import com.sonumax2.javabot.util.NameNormUtils;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -50,6 +51,10 @@ public class CounterpartyService {
         String ui = NameNormUtils.normalizeUi(rawName);
         if (ui.isBlank()) return List.of();
         return repo.searchActiveByKindAndName(kindOrDefault(kind), ui, limit);
+    }
+
+    public List<Counterparty> searchSimple(String rawName) {
+        return search(rawName, 8);
     }
 
     public Optional<Counterparty> findExact(String raw) {
@@ -126,4 +131,6 @@ public class CounterpartyService {
     private static CounterpartyKind kindOrDefault(CounterpartyKind kind) {
         return kind == null ? CounterpartyKind.OTHER : kind;
     }
+
+
 }

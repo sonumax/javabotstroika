@@ -1,5 +1,6 @@
 package com.sonumax2.javabot.bot.ui;
 
+import com.sonumax2.javabot.domain.session.service.UserSessionService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -12,14 +13,22 @@ public class BotUi {
 
     private final BotMessageService bot;
     private final LocalizationService localeMessage;
+    private final UserSessionService userSessionService;
 
-    public BotUi(BotMessageService bot, LocalizationService localeMessage) {
+    public BotUi(BotMessageService bot, LocalizationService localeMessage, UserSessionService userSessionService) {
         this.bot = bot;
         this.localeMessage = localeMessage;
+        this.userSessionService = userSessionService;
     }
 
     public String msg(long chatId, String key, Object... args) {
         return localeMessage.getLocaleMessage(chatId, key, args);
+    }
+
+    public int sendPanelKey(long chatId, String key, ReplyKeyboard kb, Object... args) {
+        int id = sendKeyReturnId(chatId, key, kb, args);
+        userSessionService.setPanelMessageId(chatId, id);
+        return id;
     }
 
     /* -------- send (async) -------- */
@@ -84,6 +93,8 @@ public class BotUi {
     public int movePanelDownKey(long chatId, Integer oldPanelId, String key, ReplyKeyboard kb, Object... args) {
         int newPanelId = sendKeyReturnId(chatId, key, kb, args);
 
+        userSessionService.setPanelMessageId(chatId, newPanelId);
+
         if (oldPanelId != null && oldPanelId != newPanelId) {
             delete(chatId, oldPanelId);
         }
@@ -96,6 +107,8 @@ public class BotUi {
     public int replacePanelText(long chatId, Integer oldMessageId, String text, ReplyKeyboard kb) {
         Message m = bot.execute(sm(chatId, text, kb));
         int newId = m.getMessageId();
+
+        userSessionService.setPanelMessageId(chatId, newId);
 
         if (oldMessageId != null && oldMessageId != newId) {
             bot.safeDelete(chatId, oldMessageId);

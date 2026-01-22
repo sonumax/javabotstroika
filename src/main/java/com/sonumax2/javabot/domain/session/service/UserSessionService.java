@@ -112,6 +112,20 @@ public class UserSessionService {
         return cut(u, 64);
     }
 
+    public Long getPanelMessageId(long chatId) {
+        return getOnCreateUserSession(chatId).getPanelMessageId();
+    }
+
+    public void setPanelMessageId(long chatId, Integer messageId) {
+        UserSession s = getOnCreateUserSession(chatId);
+        s.setPanelMessageId(messageId == null ? null : messageId.longValue());
+        userSessionRepository.save(s);
+    }
+
+    public void clearPanelMessageId(long chatId) {
+        setPanelMessageId(chatId, null);
+    }
+
     private String safe(String s) { return s == null ? "" : s.trim(); }
 
     private String cut(String s, int max) {

@@ -1,5 +1,6 @@
 package com.sonumax2.javabot.bot.commands.ops;
 
+import com.sonumax2.javabot.domain.draft.DraftType;
 import com.sonumax2.javabot.bot.commands.CommandName;
 import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.commands.Command;
@@ -31,17 +32,17 @@ public class ExpenseCommand implements Command {
     private static final Logger log = LoggerFactory.getLogger(ExpenseCommand.class);
 
     private static final String PREVIEW_MENU = CbParts.ADD_OPR;
-    private static final String DRAFT_TYPE = "EXPENSE";
+    private static final DraftType DRAFT_TYPE = DraftType.EXPENSE;
 
     private static final EnumSet<UserState> TEXT_STATES = EnumSet.of(
-        UserState.EXPENSE_WAIT_OBJECT_TEXT,
-        UserState.EXPENSE_WAIT_NOMENCLATURE_PICK,
-        UserState.EXPENSE_WAIT_NEW_NOMENCLATURE_TEXT,
-        UserState.EXPENSE_WAIT_CP_TEXT,
-        UserState.EXPENSE_WAIT_CP_PICK,
-        UserState.EXPENSE_WAIT_AMOUNT,
-        UserState.EXPENSE_WAIT_DATE_TEXT,
-        UserState.EXPENSE_WAIT_NOTE
+            UserState.EXPENSE_WAIT_OBJECT_TEXT,
+            UserState.EXPENSE_WAIT_NOMENCLATURE_PICK,
+            UserState.EXPENSE_WAIT_NEW_NOMENCLATURE_TEXT,
+            UserState.EXPENSE_WAIT_CP_TEXT,
+            UserState.EXPENSE_WAIT_CP_PICK,
+            UserState.EXPENSE_WAIT_AMOUNT,
+            UserState.EXPENSE_WAIT_DATE_TEXT,
+            UserState.EXPENSE_WAIT_NOTE
     );
 
     private static final EnumSet<UserState> FLOW_STATES = EnumSet.of(
@@ -142,6 +143,7 @@ public class ExpenseCommand implements Command {
 
         ui.ack(cq.getId());
 
+        //Start
         if (ExpenseCb.isStartPick(data)) {
             draftService.clear(chatId, DRAFT_TYPE);
 
@@ -155,16 +157,16 @@ public class ExpenseCommand implements Command {
 
         if (ExpenseCb.isObject(data)) {
             if (ExpenseCb.isObjectNewPick(data)) {
-                showCreateNewObjectMenuEditMessage(chatId, messageId);
+                showNewObjectMenuEditMessage(chatId, messageId);
                 return;
             }
 
-            if(ExpenseCb.isNewObjectBackPick(data)){
+            if (ExpenseCb.isNewObjectBackPick(data)) {
                 showChoseObjectMenuEditMessage(chatId, messageId);
                 return;
             }
 
-            if(ExpenseCb.isObjectPick(data)) {
+            if (ExpenseCb.isObjectPick(data)) {
                 ExpenseDraft d = draft(chatId);
                 d.objectId = ExpenseCb.pickObjectId(data);
                 draftService.save(chatId, DRAFT_TYPE, d);
@@ -215,8 +217,13 @@ public class ExpenseCommand implements Command {
         }
 
         if (ExpenseCb.isCounterparty(data)) {
-            if (ExpenseCb.isCounterpartyBackPick(data) ) {
+            if (ExpenseCb.isCounterpartyBackPick(data)) {
                 showChoseNomenclatureMenuEditMessage(chatId, messageId);
+                return;
+            }
+
+            if (ExpenseCb.isCounterpartySkipPick(data)) {
+                showEnterAmountMenuEditKey(chatId, messageId);
                 return;
             }
 
@@ -239,7 +246,7 @@ public class ExpenseCommand implements Command {
                 return;
             }
 
-            if("exp:cnp:search:back".equals(data)) {
+            if ("exp:cnp:search:back".equals(data)) {
                 showChoseNomenclatureMenuEditMessage(chatId, messageId);
                 return;
             }
@@ -248,8 +255,6 @@ public class ExpenseCommand implements Command {
         if (ExpenseCb.isAmountBackPick(data)) {
             showChoseCounterpartyMenuEditMessage(chatId, messageId);
         }
-
-
 
 
         if (ExpenseCb.isReceipt(data)) {
@@ -290,7 +295,7 @@ public class ExpenseCommand implements Command {
         );
     }
 
-    private void showCreateNewObjectMenuEditMessage(long chatId, int messageId) {
+    private void showNewObjectMenuEditMessage(long chatId, int messageId) {
         userSessionService.setUserState(chatId, UserState.EXPENSE_WAIT_OBJECT_TEXT);
         ui.editKey(
                 chatId,
@@ -344,11 +349,12 @@ public class ExpenseCommand implements Command {
                 chatId,
                 messageId,
                 "counterparty.choseOrCreate",
-                keyboardService.listTwoInOneInline(
+                keyboardService.listTwoInOneInlineWithSkip(
                         chatId,
                         menu,
                         ExpenseCb.pickCounterparty(),
                         ExpenseCb.newCounterparty(),
+                        ExpenseCb.skipCounterparty(),
                         backCallback
                 )
         );
@@ -360,7 +366,7 @@ public class ExpenseCommand implements Command {
                 chatId,
                 messageId,
                 "counterparty.askNew",
-                keyboardService.backInline(chatId, ExpenseCb.createCounterpartyBack())
+                keyboardService.backInline(chatId, ExpenseCb.newCounterpartyBack())
         );
     }
 
@@ -375,14 +381,11 @@ public class ExpenseCommand implements Command {
     }
 
 
-
     private void showReceiptMenu(long chatId, int messageId) {
         // добавь новый стейт, если хочешь: EXPENSE_WAIT_RECEIPT
         ui.editKey(chatId, messageId, "receipt.ask",
                 keyboardService.receiptInline(chatId, ExpenseCb.receiptPrefix(), /*back*/ ExpenseCb.noteBack()));
     }
-
-
 
 
     private void handleText(Update update) {
@@ -394,6 +397,7 @@ public class ExpenseCommand implements Command {
             case EXPENSE_WAIT_OBJECT_TEXT -> createNewObjectAndShowNextMenu(chatId, text);
             case EXPENSE_WAIT_NOMENCLATURE_PICK -> selectOrSearchNomenclature(chatId, text);
             case EXPENSE_WAIT_NEW_NOMENCLATURE_TEXT -> createNewNomenclatureAndShowNextMenu(chatId, text);
+            case EXPENSE_WAIT_CP_PICK -> selectOrSearchCounterparty(chatId, text);
             case EXPENSE_WAIT_CP_TEXT -> createNewCounterpartyAndShowNextMenu(chatId, text);
 
 //            case ADVANCE_WAIT_DATE_TEXT -> onDateFromText(chatId, text);
@@ -514,11 +518,12 @@ public class ExpenseCommand implements Command {
                 chatId,
                 d.panelMessageId,
                 "counterparty.choseOrCreate",
-                keyboardService.listTwoInOneInline(
+                keyboardService.listTwoInOneInlineWithSkip(
                         chatId,
                         menu,
                         ExpenseCb.pickCounterparty(),
                         ExpenseCb.newCounterparty(),
+                        ExpenseCb.skipCounterparty(),
                         backCallback
                 )
         );
@@ -527,12 +532,65 @@ public class ExpenseCommand implements Command {
     }
 
     private void createNewCounterpartyAndShowNextMenu(long chatId, String text) {
+        createNewCounterparty(chatId, text);
+        showEnterAmountMenuNewMessage(chatId);
+    }
+
+    private void createNewCounterparty(long chatId, String text) {
         ExpenseDraft d = draft(chatId);
         Counterparty cp = counterpartyService.getOrCreate(text, chatId);
         d.counterpartyId = cp.getId();
         draftService.save(chatId, DRAFT_TYPE, d);
+    }
 
-        showEnterAmountMenuEditKey(chatId, d.panelMessageId);
+    private void selectOrSearchCounterparty(long chatId, String text) {
+        ExpenseDraft d = draft(chatId);
+        Optional<Counterparty> cp = counterpartyService.findExact(text);
+
+        if (cp.isPresent()) {
+            d.counterpartyId = cp.get().getId();
+            draftService.save(chatId, DRAFT_TYPE, d);
+            showEnterAmountMenuNewMessage(chatId);
+            return;
+        }
+
+        showSimpleOrAskCreateCounterpartyMenuNewMessage(chatId, text);
+    }
+
+    private void showSimpleOrAskCreateCounterpartyMenuNewMessage(long chatId, String text) {
+        userSessionService.setUserState(chatId, UserState.EXPENSE_WAIT_CP_SUGGEST);
+        ExpenseDraft d = draft(chatId);
+
+        d.pendingCounterpartyName = text;
+        List<Counterparty> counterpartyList = counterpartyService.searchSimple(text);
+
+        d.panelMessageId = ui.replacePanelKey(
+                chatId,
+                d.panelMessageId,
+                "counterparty.choseOrCreate",
+                keyboardService.listTwoInOneInline(
+                        chatId,
+                        counterpartyList,
+                        ExpenseCb.pickCounterparty(),
+                        ExpenseCb.createCounterparty(),
+                        ExpenseCb.searchBackCounterparty()
+                ),
+                text
+        );
+
+        draftService.save(chatId, DRAFT_TYPE, d);
+    }
+
+    private void showEnterAmountMenuNewMessage(long chatId) {
+        ExpenseDraft d = draft(chatId);
+        userSessionService.setUserState(chatId, UserState.EXPENSE_WAIT_AMOUNT);
+        d.panelMessageId = ui.movePanelDownKey(
+                chatId,
+                d.panelMessageId,
+                "advance.askAmount",
+                keyboardService.backInline(chatId, ExpenseCb.amountBack())
+        );
+        draftService.save(chatId, DRAFT_TYPE, d);
     }
 
     /* -------------------- menu builders -------------------- */

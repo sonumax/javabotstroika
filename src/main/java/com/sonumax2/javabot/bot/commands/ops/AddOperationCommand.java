@@ -6,6 +6,8 @@ import com.sonumax2.javabot.bot.commands.Command;
 import com.sonumax2.javabot.bot.commands.CommandName;
 import com.sonumax2.javabot.bot.ui.BotUi;
 import com.sonumax2.javabot.bot.ui.KeyboardService;
+import com.sonumax2.javabot.domain.session.UserSession;
+import com.sonumax2.javabot.domain.session.service.UserSessionService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -14,13 +16,15 @@ public class AddOperationCommand implements Command {
 
     private final KeyboardService keyboardService;
     private final BotUi ui;
+    private final UserSessionService userSessionService;
 
     public AddOperationCommand(
             KeyboardService keyboardService,
-            BotUi ui
+            BotUi ui, UserSessionService userSessionService
     ) {
         this.ui = ui;
         this.keyboardService = keyboardService;
+        this.userSessionService = userSessionService;
     }
 
     @Override
@@ -38,17 +42,24 @@ public class AddOperationCommand implements Command {
         ui.ack(cq.getId());
 
         long chatId = cq.getMessage().getChatId();
-        int messageId = cq.getMessage().getMessageId();
+        int clickedMessageId = cq.getMessage().getMessageId();
 
-        showAddOperationEditMessage(chatId, messageId);
+        userSessionService.setPanelMessageId(chatId, clickedMessageId);
+
+        showAddOperationPanel(chatId);
     }
 
-    private void showAddOperationEditMessage(long chatId, int messageId) {
-        ui.editKey(chatId,
-                messageId,
-                "operation.text",
-                keyboardService.operationsAddMenuInline(chatId, CbParts.ADD_OPR, CbParts.MENU)
-        );
+    private void showAddOperationPanel(long chatId) {
+        Long panelId = userSessionService.getPanelMessageId(chatId);
+
+        var kb = keyboardService.operationsAddMenuInline(chatId, CbParts.ADD_OPR, CbParts.MENU);
+
+        if (panelId == null) {
+            ui.movePanelDownKey(chatId, null, "operation.text", kb);
+            return;
+        }
+
+        ui.editKey(chatId, panelId.intValue(), "operation.text", kb);
     }
 
     @Override

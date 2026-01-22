@@ -113,6 +113,38 @@ public class KeyboardService {
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
+    public <T extends BaseRefEntity> InlineKeyboardMarkup listTwoInOneInlineWithSkip(
+            long chatId,
+            List<T> list,
+            String pickPrefix,
+            String addCallback,
+            String skipCallback,
+            String backCallback
+    ) {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+
+        for (int i = 0; i < list.size(); i += 2) {
+            T a = list.get(i);
+
+            if (i + 1 < list.size()) {
+                T b = list.get(i + 1);
+                rows.add(row(
+                        refBtn(a, pickPrefix),
+                        refBtn(b, pickPrefix)
+                ));
+            } else {
+                rows.add(row(refBtn(a, pickPrefix)));
+            }
+        }
+
+        rows.add(row(btn(chatId, "add", addCallback)));
+        rows.add(row(btn(chatId, "skip", skipCallback)));
+        rows.add(backRow(chatId, backCallback));
+
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
+
     public <T extends BaseRefEntity> InlineKeyboardMarkup listOneInline(
             long chatId,
             List<T> list,

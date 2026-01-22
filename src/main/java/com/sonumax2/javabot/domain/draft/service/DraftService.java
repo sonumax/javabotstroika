@@ -1,5 +1,6 @@
 package com.sonumax2.javabot.domain.draft.service;
 
+import com.sonumax2.javabot.domain.draft.DraftType;
 import tools.jackson.databind.ObjectMapper;
 import com.sonumax2.javabot.domain.draft.UserDraft;
 import com.sonumax2.javabot.domain.draft.repo.UserDraftRepository;
@@ -64,6 +65,18 @@ public class DraftService {
 
     public void clearAll(Long chatId) {
         repo.deleteByChatId(chatId);
+    }
+
+    public <T> T get(long chatId, DraftType type, Class<T> clazz) {
+        return get(chatId, type.key(), clazz);
+    }
+
+    public void save(long chatId, DraftType type, Object draft) {
+        save(chatId, type.key(), draft);
+    }
+
+    public void clear(long chatId, DraftType type) {
+        clear(chatId, type.key());
     }
 
     /* ---------- helpers ---------- */
