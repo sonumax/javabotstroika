@@ -4,6 +4,7 @@ import com.sonumax2.javabot.bot.commands.CommandName;
 import com.sonumax2.javabot.bot.commands.cb.AdvanceCb;
 import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.commands.Command;
+import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.AdvanceDraft;
 import com.sonumax2.javabot.domain.draft.DraftType;
 import com.sonumax2.javabot.domain.operation.Operation;
@@ -18,6 +19,7 @@ import com.sonumax2.javabot.util.DateParseResult;
 import com.sonumax2.javabot.util.InputParseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -26,13 +28,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 
+@Order(50)
 @Component
 public class AdvanceCommand implements Command {
 
     private static final Logger log = LoggerFactory.getLogger(AdvanceCommand.class);
 
     private static final String PREVIEW_MENU = CbParts.ADD_OPR;
-
     private static final DraftType DRAFT_TYPE = DraftType.ADVANCE;
 
     private static final EnumSet<UserState> ADV_TEXT_STATES = EnumSet.of(
@@ -122,10 +124,9 @@ public class AdvanceCommand implements Command {
         var cq = update.getCallbackQuery();
         String data = cq.getData();
         long chatId = cq.getMessage().getChatId();
-        int clickedMessageId = cq.getMessage().getMessageId();
+        int messageId = cq.getMessage().getMessageId();
 
-        userSessionService.setPanelMessageId(chatId, clickedMessageId);
-
+        ui.setPanelId(chatId, messageId);
         ui.ack(cq.getId());
 
         if (AdvanceCb.isStartPick(data)) {
@@ -157,16 +158,16 @@ public class AdvanceCommand implements Command {
 
             if (d.returnToConfirm) {
                 setConfirm(chatId, false);
-                showConfirmPanel(chatId);
+                showConfirmPanel(chatId, PanelMode.EDIT);
                 return;
             }
 
-            showEnterAmountPanel(chatId);
+            showEnterAmountPanel(chatId, PanelMode.EDIT);
             return;
         }
 
         if (AdvanceCb.isNoteBackPick(data)) {
-            showEnterAmountPanel(chatId);
+            showEnterAmountPanel(chatId, PanelMode.EDIT);
             return;
         }
 
@@ -179,7 +180,7 @@ public class AdvanceCommand implements Command {
                 setConfirm(chatId, false);
             }
 
-            showConfirmPanel(chatId);
+            showConfirmPanel(chatId, PanelMode.EDIT);
             return;
         }
 
@@ -195,20 +196,20 @@ public class AdvanceCommand implements Command {
             }
             if (AdvanceCb.isConfirmEditAmountPick(data)) {
                 setConfirm(chatId, true);
-                showEnterAmountPanel(chatId);
+                showEnterAmountPanel(chatId, PanelMode.EDIT);
                 return;
             }
             if (AdvanceCb.isConfirmEditNotePick(data)) {
                 setConfirm(chatId, true);
-                showEnterNotePanel(chatId);
+                showEnterNotePanel(chatId, PanelMode.EDIT);
                 return;
             }
             if (AdvanceCb.isConfirmCancelPick(data)) {
-                goToMainMenu(chatId, "cancelled");
+                goToMainMenu(chatId, "cancelled", PanelMode.EDIT);
                 return;
             }
             if (AdvanceCb.isConfirmBackPick(data)) {
-                showConfirmPanel(chatId);
+                showConfirmPanel(chatId, PanelMode.EDIT);
             }
         }
     }
@@ -235,30 +236,22 @@ public class AdvanceCommand implements Command {
         AdvanceDraft d = draft(chatId);
         String backCallback = d.returnToConfirm ? AdvanceCb.confirmBack() : PREVIEW_MENU;
 
-        var kb = keyboardService.datePickerInline(chatId, AdvanceCb.NS, backCallback);
-        String key = "advance.askDate";
-        Integer pid = panelId(chatId);
-        if (pid == null) {
-            ui.movePanelDownKey(chatId, null, key, kb);
-            return;
-        }
-
-        ui.editKey(chatId, pid, key, kb);
+        ui.panelKey(
+                chatId,
+                PanelMode.EDIT,
+                "advance.askDate",
+                keyboardService.datePickerInline(chatId, AdvanceCb.NS, backCallback)
+        );
     }
 
     private void showEnterDatePanel(long chatId) {
         userSessionService.setUserState(chatId, UserState.ADVANCE_WAIT_DATE_TEXT);
-
-        var kb = keyboardService.backInline(chatId, AdvanceCb.manualDateBack());
-        String key = "advance.enterDate";
-
-        Integer pid = panelId(chatId);
-        if (pid == null) {
-            ui.movePanelDownKey(chatId, null, key, kb);
-            return;
-        }
-
-        ui.editKey(chatId, pid, key, kb);
+        ui.panelKey(
+                chatId,
+                PanelMode.EDIT,
+                "advance.enterDate",
+                keyboardService.backInline(chatId, AdvanceCb.manualDateBack())
+        );
     }
 
     private void checkAndSaveDate(long chatId, String raw) {
@@ -277,43 +270,35 @@ public class AdvanceCommand implements Command {
         if (d.returnToConfirm) {
             d.returnToConfirm = false;
             draftService.save(chatId, DRAFT_TYPE, d);
-            showConfirmPanel(chatId);
+            showConfirmPanel(chatId, PanelMode.MOVE_DOWN);
             return;
         }
 
-        showEnterAmountPanel(chatId);
+        showEnterAmountPanel(chatId, PanelMode.MOVE_DOWN);
     }
 
     private void showErrorDatePanel(long chatId, String keyMessage) {
         userSessionService.setUserState(chatId, UserState.ADVANCE_WAIT_DATE_TEXT);
-
-        var kb = keyboardService.backInline(chatId, AdvanceCb.errorDateBack());
-
-        Integer pid = panelId(chatId);
-        if (pid == null) {
-            ui.movePanelDownKey(chatId, null, keyMessage, kb);
-            return;
-        }
-
-        ui.editKey(chatId, pid, keyMessage, kb);
+        ui.panelKey(
+                chatId,
+                PanelMode.MOVE_DOWN,
+                keyMessage,
+                keyboardService.backInline(chatId, AdvanceCb.errorDateBack())
+        );
     }
 
-    private void showEnterAmountPanel(long chatId) {
+    private void showEnterAmountPanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.ADVANCE_WAIT_AMOUNT);
 
         AdvanceDraft d = draft(chatId);
         String backCallback = d.returnToConfirm ? AdvanceCb.confirmBack() : AdvanceCb.amountBack();
 
-        var kb = keyboardService.backInline(chatId, backCallback);
-        String key = "advance.askAmount";
-
-        Integer pid = panelId(chatId);
-        if (pid == null) {
-            ui.movePanelDownKey(chatId, null, key, kb);
-            return;
-        }
-
-        ui.editKey(chatId, pid, key, kb);
+        ui.panelKey(
+                chatId,
+                mode,
+                "advance.askAmount",
+                keyboardService.backInline(chatId, backCallback)
+        );
     }
 
     private void checkAndSaveAmount(long chatId, String raw) {
@@ -331,11 +316,11 @@ public class AdvanceCommand implements Command {
         if (d.returnToConfirm) {
             d.returnToConfirm = false;
             draftService.save(chatId, DRAFT_TYPE, d);
-            showConfirmPanel(chatId);
+            showConfirmPanel(chatId, PanelMode.MOVE_DOWN);
             return;
         }
 
-        showEnterNotePanel(chatId);
+        showEnterNotePanel(chatId, PanelMode.MOVE_DOWN);
     }
 
     private void showErrorAmountPanel(long chatId) {
@@ -344,34 +329,26 @@ public class AdvanceCommand implements Command {
         AdvanceDraft d = draft(chatId);
         String backCallback = d.returnToConfirm ? AdvanceCb.confirmBack() : AdvanceCb.amountBack();
 
-        var kb = keyboardService.backInline(chatId, backCallback);
-        String key = "amountInvalid";
-
-        Integer pid = panelId(chatId);
-        if (pid == null) {
-            ui.movePanelDownKey(chatId, null, key, kb);
-            return;
-        }
-
-        ui.editKey(chatId, pid, key, kb);
+        ui.panelKey(
+                chatId,
+                PanelMode.MOVE_DOWN,
+                "amountInvalid",
+                keyboardService.backInline(chatId, backCallback)
+        );
     }
 
-    private void showEnterNotePanel(long chatId) {
+    private void showEnterNotePanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.ADVANCE_WAIT_NOTE);
 
         AdvanceDraft d = draft(chatId);
         String backCallback = d.returnToConfirm ? AdvanceCb.confirmBack() : AdvanceCb.noteBack();
 
-        var kb = keyboardService.skipInline(chatId, AdvanceCb.noteSkip(), backCallback);
-        String key = "advance.askNote";
-
-        Integer pid = panelId(chatId);
-        if (pid == null) {
-            ui.movePanelDownKey(chatId, null, key, kb);
-            return;
-        }
-
-        ui.editKey(chatId, pid, key, kb);
+        ui.panelKey(
+                chatId,
+                mode,
+                "advance.askNote",
+                keyboardService.skipInline(chatId, AdvanceCb.noteSkip(), backCallback)
+        );
     }
 
     private void checkAndSaveNote(long chatId, String raw) {
@@ -384,24 +361,22 @@ public class AdvanceCommand implements Command {
             draftService.save(chatId, DRAFT_TYPE, d);
         }
 
-        showConfirmPanel(chatId);
+        showConfirmPanel(chatId, PanelMode.MOVE_DOWN);
     }
 
-    private void showConfirmPanel(long chatId) {
+    private void showConfirmPanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.ADVANCE_CONFIRM);
 
         AdvanceDraft d = draft(chatId);
-
-        var kb = keyboardService.confirmInline(chatId, AdvanceCb.NS);
-        String key = "adv.confirm";
-
-        Integer pid = panelId(chatId);
-        if (pid == null) {
-            ui.movePanelDownKey(chatId, null, key, kb, d.amount, d.date, (d.note == null ? "—" : d.note));
-            return;
-        }
-
-        ui.editKey(chatId, pid, key, kb, d.amount, d.date, (d.note == null ? "—" : d.note));
+        ui.panelKey(
+                chatId,
+                mode,
+                "adv.confirm",
+                keyboardService.confirmInline(chatId, AdvanceCb.NS),
+                d.amount,
+                d.date,
+                (d.note == null ? "—" : d.note)
+        );
     }
 
     private void setConfirm(long chatId, boolean confirm) {
@@ -422,7 +397,7 @@ public class AdvanceCommand implements Command {
         }
 
         if (d.amount == null) {
-            showEnterAmountPanel(chatId);
+            showEnterAmountPanel(chatId, PanelMode.EDIT);
             return;
         }
 
@@ -438,32 +413,26 @@ public class AdvanceCommand implements Command {
 
         String name = userSessionService.displayName(chatId);
 
-        goToMainMenu(chatId, "advance.saved", name, op.getAmount(), op.getOpDate());
+        goToMainMenu(chatId, "advance.saved", PanelMode.EDIT, name, op.getAmount(), op.getOpDate());
     }
 
-    private void goToMainMenu(long chatId, String keyMessage, Object... args) {
+    private void goToMainMenu(long chatId, String keyMessage, PanelMode mode, Object... args) {
         draftService.clear(chatId, DRAFT_TYPE);
         userSessionService.setUserState(chatId, UserState.IDLE);
 
-        var kb = keyboardService.mainMenuInline(chatId);
-
-        Integer pid = panelId(chatId);
-        if (pid == null) {
-            ui.movePanelDownKey(chatId, null, keyMessage, kb, args);
-        } else {
-            ui.editKey(chatId, pid, keyMessage, kb, args);
-        }
+        ui.panelKey(
+                chatId,
+                mode,
+                keyMessage,
+                keyboardService.mainMenuInline(chatId),
+                args
+        );
     }
 
     private String normalizeNote(String raw) {
         if (raw == null) return null;
         String s = raw.trim();
         return s.isBlank() ? null : s;
-    }
-
-    private Integer panelId(long chatId) {
-        Long id = userSessionService.getPanelMessageId(chatId);
-        return id == null ? null : id.intValue();
     }
 
     private AdvanceDraft draft(long chatId) {

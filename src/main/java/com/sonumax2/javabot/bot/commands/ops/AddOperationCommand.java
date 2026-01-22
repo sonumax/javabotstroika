@@ -6,25 +6,24 @@ import com.sonumax2.javabot.bot.commands.Command;
 import com.sonumax2.javabot.bot.commands.CommandName;
 import com.sonumax2.javabot.bot.ui.BotUi;
 import com.sonumax2.javabot.bot.ui.KeyboardService;
-import com.sonumax2.javabot.domain.session.UserSession;
-import com.sonumax2.javabot.domain.session.service.UserSessionService;
+import com.sonumax2.javabot.bot.ui.PanelMode;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+@Order(20)
 @Component
 public class AddOperationCommand implements Command {
 
     private final KeyboardService keyboardService;
     private final BotUi ui;
-    private final UserSessionService userSessionService;
 
     public AddOperationCommand(
             KeyboardService keyboardService,
-            BotUi ui, UserSessionService userSessionService
+            BotUi ui
     ) {
         this.ui = ui;
         this.keyboardService = keyboardService;
-        this.userSessionService = userSessionService;
     }
 
     @Override
@@ -39,27 +38,21 @@ public class AddOperationCommand implements Command {
     @Override
     public void handle(Update update) {
         var cq = update.getCallbackQuery();
-        ui.ack(cq.getId());
-
         long chatId = cq.getMessage().getChatId();
-        int clickedMessageId = cq.getMessage().getMessageId();
+        int messageId = cq.getMessage().getMessageId();
 
-        userSessionService.setPanelMessageId(chatId, clickedMessageId);
-
+        ui.ack(cq.getId());
+        ui.setPanelId(chatId, messageId);
         showAddOperationPanel(chatId);
     }
 
     private void showAddOperationPanel(long chatId) {
-        Long panelId = userSessionService.getPanelMessageId(chatId);
-
-        var kb = keyboardService.operationsAddMenuInline(chatId, CbParts.ADD_OPR, CbParts.MENU);
-
-        if (panelId == null) {
-            ui.movePanelDownKey(chatId, null, "operation.text", kb);
-            return;
-        }
-
-        ui.editKey(chatId, panelId.intValue(), "operation.text", kb);
+        ui.panelKey(
+                chatId,
+                PanelMode.EDIT,
+                "operation.text",
+                keyboardService.operationsAddMenuInline(chatId, CbParts.ADD_OPR, CbParts.MENU)
+        );
     }
 
     @Override

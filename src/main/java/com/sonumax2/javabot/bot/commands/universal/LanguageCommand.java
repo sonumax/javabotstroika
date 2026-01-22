@@ -6,12 +6,15 @@ import com.sonumax2.javabot.bot.commands.Command;
 import com.sonumax2.javabot.bot.commands.CommandName;
 import com.sonumax2.javabot.bot.ui.BotUi;
 import com.sonumax2.javabot.bot.ui.KeyboardService;
+import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.session.service.UserSessionService;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import static com.sonumax2.javabot.util.TelegramCommandUtils.extractCommand;
 
+@Order(10)
 @Component
 public class LanguageCommand implements Command {
 
@@ -48,9 +51,10 @@ public class LanguageCommand implements Command {
             String data = cq.getData();
 
             ui.ack(cq.getId());
+            ui.setPanelId(chatId, messageId);
 
             if (Cb.is(data, CbParts.LANG)) {
-                showLanguageMenuEditMessage(chatId, messageId);
+                showLanguagePanel(chatId, PanelMode.EDIT);
                 return;
             }
 
@@ -60,11 +64,10 @@ public class LanguageCommand implements Command {
                 lang = data.substring(lang.length());
                 userSessionService.setLocale(chatId, lang);
 
-                showLanguageSwitchedMenuEditMessage(chatId, messageId);
+                showLanguageSwitchedPanel(chatId, PanelMode.EDIT);
             }
             return;
         }
-
         long chatId = update.getMessage().getChatId();
         String text = update.getMessage().getText().trim();
         String[] parts = text.split("\\s+");
@@ -72,43 +75,28 @@ public class LanguageCommand implements Command {
         if (parts.length >= 2) {
             String lang = parts[1];
             userSessionService.setLocale(chatId, lang);
-            showLanguageSwitchedMenuNewMessage(chatId);
+
+            showLanguageSwitchedPanel(chatId, PanelMode.MOVE_DOWN);
         } else {
-            showLanguageMenuNewMessage(chatId);
+            showLanguagePanel(chatId, PanelMode.MOVE_DOWN);
         }
     }
 
-    private void showLanguageMenuNewMessage(long chatId) {
-        ui.sendKey(
+    private void showLanguagePanel(long chatId, PanelMode mode) {
+        ui.panelKey(
                 chatId,
+                mode,
                 "language.select",
                 keyboardService.languageInline(chatId)
         );
     }
 
-    private void showLanguageSwitchedMenuNewMessage(long chatId) {
-        ui.sendKey(
+    private void showLanguageSwitchedPanel(long chatId, PanelMode mode) {
+        ui.panelKey(
                 chatId,
+                mode,
                 "language.switched",
                 keyboardService.mainMenuInline(chatId)
-        );
-    }
-
-    private void showLanguageSwitchedMenuEditMessage(long chatId, int messageId) {
-        ui.editKey(
-                chatId,
-                messageId,
-                "language.switched",
-                keyboardService.mainMenuInline(chatId)
-        );
-    }
-
-    private void showLanguageMenuEditMessage(long chatId, int messageId) {
-        ui.editKey(
-                chatId,
-                messageId,
-                "language.select",
-                keyboardService.languageInline(chatId)
         );
     }
 

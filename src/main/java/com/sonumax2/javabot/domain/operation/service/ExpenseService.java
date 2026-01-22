@@ -4,7 +4,7 @@ import com.sonumax2.javabot.domain.operation.Expense;
 import com.sonumax2.javabot.domain.operation.ReceiptType;
 import com.sonumax2.javabot.domain.reference.Counterparty;
 import com.sonumax2.javabot.domain.operation.repo.ExpenseRepository;
-import com.sonumax2.javabot.domain.reference.sevrice.CounterpartyService;
+import com.sonumax2.javabot.domain.reference.service.CounterpartyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

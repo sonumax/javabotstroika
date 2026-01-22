@@ -6,11 +6,14 @@ import com.sonumax2.javabot.bot.commands.Command;
 import com.sonumax2.javabot.bot.commands.CommandName;
 import com.sonumax2.javabot.bot.ui.BotUi;
 import com.sonumax2.javabot.bot.ui.KeyboardService;
+import com.sonumax2.javabot.bot.ui.PanelMode;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import static com.sonumax2.javabot.util.TelegramCommandUtils.extractCommand;
 
+@Order(10)
 @Component
 public class HelpCommand implements Command {
 
@@ -42,26 +45,19 @@ public class HelpCommand implements Command {
             int messageId = cq.getMessage().getMessageId();
 
             ui.ack(cq.getId());
-            showHelpMenuEditMessage(chatId, messageId);
+            ui.setPanelId(chatId, messageId);
+            showHelpPanel(chatId, PanelMode.EDIT);
             return;
         }
 
         long chatId = update.getMessage().getChatId();
-        showHelpMenuNewMessage(chatId);
+        showHelpPanel(chatId, PanelMode.MOVE_DOWN);
     }
 
-    private void showHelpMenuEditMessage(long chatId, int messageId) {
-        ui.editKey(
+    private void showHelpPanel(long chatId, PanelMode mode) {
+        ui.panelKey(
                 chatId,
-                messageId,
-                "help.text",
-                keyboardService.backInline(chatId, CbParts.MENU)
-        );
-    }
-
-    private void showHelpMenuNewMessage(long chatId) {
-        ui.sendKey(
-                chatId,
+                mode,
                 "help.text",
                 keyboardService.backInline(chatId, CbParts.MENU)
         );

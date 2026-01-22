@@ -4,26 +4,27 @@ import com.sonumax2.javabot.bot.commands.cb.Cb;
 import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.commands.Command;
 import com.sonumax2.javabot.bot.commands.CommandName;
-import com.sonumax2.javabot.domain.session.UserState;
+import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.bot.ui.BotUi;
 import com.sonumax2.javabot.bot.ui.KeyboardService;
 import com.sonumax2.javabot.domain.session.service.UserSessionService;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import static com.sonumax2.javabot.util.TelegramCommandUtils.extractCommand;
 
+@Order(10)
 @Component
 public class StartCommand implements Command {
 
     private final KeyboardService keyboardService;
-    private final UserSessionService userSessionService;
     private final BotUi ui;
+    private final UserSessionService userSessionService;
 
     public StartCommand(
             KeyboardService keyboardService,
-            UserSessionService userSessionService,
-            BotUi ui) {
+            BotUi ui, UserSessionService userSessionService) {
         this.ui = ui;
         this.keyboardService = keyboardService;
         this.userSessionService = userSessionService;
@@ -46,30 +47,20 @@ public class StartCommand implements Command {
             int messageId = cq.getMessage().getMessageId();
 
             ui.ack(cq.getId());
-
-            showMainMenuEditMessage(chatId, messageId);
+            ui.setPanelId(chatId, messageId);
+            showStartPanel(chatId, PanelMode.EDIT);
             return;
         }
 
-        showMainMenuNewMessage(update.getMessage().getChatId());
+        long chatId = update.getMessage().getChatId();
+        showStartPanel(chatId, PanelMode.MOVE_DOWN);
     }
 
-    private void showMainMenuEditMessage(long chatId, int messageId) {
-        userSessionService.setUserState(chatId, UserState.IDLE);
+    private void showStartPanel(long chatId, PanelMode mode) {
         String name = userSessionService.displayName(chatId);
-        ui.editKey(
+        ui.panelKey(
                 chatId,
-                messageId,
-                "menu.welcome",
-                keyboardService.mainMenuInline(chatId),
-                name
-        );
-    }
-
-    private void showMainMenuNewMessage(Long chatId) {
-        userSessionService.setUserState(chatId, UserState.IDLE);
-        String name = userSessionService.displayName(chatId);
-        ui.sendKey(chatId,
+                mode,
                 "menu.welcome",
                 keyboardService.mainMenuInline(chatId),
                 name

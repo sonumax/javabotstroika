@@ -1,4 +1,4 @@
-package com.sonumax2.javabot.domain.reference.sevrice;
+package com.sonumax2.javabot.domain.reference.service;
 
 import com.sonumax2.javabot.domain.reference.Nomenclature;
 import com.sonumax2.javabot.domain.reference.repo.NomenclatureRepository;

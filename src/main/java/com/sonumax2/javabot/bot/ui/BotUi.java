@@ -21,17 +21,49 @@ public class BotUi {
         this.userSessionService = userSessionService;
     }
 
+    // -------- localization --------
+
     public String msg(long chatId, String key, Object... args) {
         return localeMessage.getLocaleMessage(chatId, key, args);
     }
 
-    public int sendPanelKey(long chatId, String key, ReplyKeyboard kb, Object... args) {
-        int id = sendKeyReturnId(chatId, key, kb, args);
-        userSessionService.setPanelMessageId(chatId, id);
-        return id;
+    // -------- panel rendering (NEW) --------
+    // Цель: один метод решает — редактировать текущую панель или создать новую “снизу”
+
+    public int panelKey(long chatId, PanelMode mode, String key, InlineKeyboardMarkup kb, Object... args) {
+        return panelText(chatId, mode, msg(chatId, key, args), kb);
     }
 
-    /* -------- send (async) -------- */
+    public int panelText(long chatId, PanelMode mode, String text, InlineKeyboardMarkup kb) {
+        Integer current = panelId(chatId);
+
+        // панели нет — просто создаём как панель
+        if (current == null) {
+            return sendPanelTextReturnId(chatId, text, kb);
+        }
+
+        if (mode == PanelMode.MOVE_DOWN) {
+            return replacePanelText(chatId, current, text, kb);
+        }
+
+        // EDIT
+        editText(chatId, current, text, kb);
+        return current;
+    }
+
+    public Integer panelId(long chatId) {
+        return toInt(userSessionService.getPanelMessageId(chatId));
+    }
+
+    public void setPanelId(long chatId, int messageId) {
+        userSessionService.setPanelMessageId(chatId, messageId);
+    }
+
+    private Integer toInt(Long v) {
+        return v == null ? null : v.intValue();
+    }
+
+    // -------- send (async) --------
 
     public void sendText(long chatId, String text) {
         sendText(chatId, text, null);
@@ -45,7 +77,15 @@ public class BotUi {
         sendText(chatId, msg(chatId, key, args), kb);
     }
 
-    /* -------- edit (async) -------- */
+    /**
+     * Создать панель (как новое сообщение) и записать её id в session.
+     * (Без удаления старой панели — иногда это нужно.)
+     */
+    public int sendPanelKey(long chatId, String key, ReplyKeyboard kb, Object... args) {
+        return sendPanelTextReturnId(chatId, msg(chatId, key, args), kb);
+    }
+
+    // -------- edit (async) --------
 
     public void editKey(long chatId, int messageId, String key, InlineKeyboardMarkup kb, Object... args) {
         bot.editText(chatId, messageId, msg(chatId, key, args), kb);
@@ -55,7 +95,7 @@ public class BotUi {
         bot.editText(chatId, messageId, text, kb);
     }
 
-    /* -------- callback (async) -------- */
+    // -------- callback (async) --------
 
     public void ack(String callbackQueryId) {
         if (callbackQueryId == null) return;
@@ -75,13 +115,13 @@ public class BotUi {
         toast(callbackQueryId, msg(chatId, key, args), alert);
     }
 
-    /* -------- delete (async) -------- */
+    // -------- delete (async) --------
 
     public void delete(long chatId, int messageId) {
         bot.safeDelete(chatId, messageId);
     }
 
-    /* -------- need result (blocking execute) -------- */
+    // -------- need result (blocking execute) --------
 
     /** Нужен messageId — поэтому execute() */
     public int sendKeyReturnId(long chatId, String key, ReplyKeyboard kb, Object... args) {
@@ -91,24 +131,14 @@ public class BotUi {
 
     /** Создать новую панель (ниже), удалить старую */
     public int movePanelDownKey(long chatId, Integer oldPanelId, String key, ReplyKeyboard kb, Object... args) {
-        int newPanelId = sendKeyReturnId(chatId, key, kb, args);
-
-        userSessionService.setPanelMessageId(chatId, newPanelId);
-
-        if (oldPanelId != null && oldPanelId != newPanelId) {
-            delete(chatId, oldPanelId);
-        }
-        return newPanelId;
+        return replacePanelText(chatId, oldPanelId, msg(chatId, key, args), kb);
     }
 
-    /* -------- replace (blocking execute) -------- */
+    // -------- replace (blocking execute) --------
 
-    /** Отправить новое сообщение-панель, удалить старое */
+    /** Отправить новое сообщение-панель, удалить старое, и обновить panelMessageId в session */
     public int replacePanelText(long chatId, Integer oldMessageId, String text, ReplyKeyboard kb) {
-        Message m = bot.execute(sm(chatId, text, kb));
-        int newId = m.getMessageId();
-
-        userSessionService.setPanelMessageId(chatId, newId);
+        int newId = sendPanelTextReturnId(chatId, text, kb);
 
         if (oldMessageId != null && oldMessageId != newId) {
             bot.safeDelete(chatId, oldMessageId);
@@ -120,7 +150,14 @@ public class BotUi {
         return replacePanelText(chatId, oldMessageId, msg(chatId, key, args), kb);
     }
 
-    /* -------- internal -------- */
+    // -------- internal --------
+
+    private int sendPanelTextReturnId(long chatId, String text, ReplyKeyboard kb) {
+        Message m = bot.execute(sm(chatId, text, kb));
+        int id = m.getMessageId();
+        userSessionService.setPanelMessageId(chatId, id);
+        return id;
+    }
 
     private SendMessage sm(long chatId, String text, ReplyKeyboard kb) {
         var b = SendMessage.builder()

@@ -6,9 +6,9 @@ import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.commands.Command;
 import com.sonumax2.javabot.bot.commands.cb.ExpenseCb;
 import com.sonumax2.javabot.domain.operation.service.ExpenseService;
-import com.sonumax2.javabot.domain.reference.sevrice.CounterpartyService;
-import com.sonumax2.javabot.domain.reference.sevrice.NomenclatureService;
-import com.sonumax2.javabot.domain.reference.sevrice.WorkObjectService;
+import com.sonumax2.javabot.domain.reference.service.CounterpartyService;
+import com.sonumax2.javabot.domain.reference.service.NomenclatureService;
+import com.sonumax2.javabot.domain.reference.service.WorkObjectService;
 import com.sonumax2.javabot.domain.draft.ExpenseDraft;
 import com.sonumax2.javabot.domain.reference.Counterparty;
 import com.sonumax2.javabot.domain.reference.Nomenclature;
@@ -21,11 +21,13 @@ import com.sonumax2.javabot.bot.ui.KeyboardService;
 import com.sonumax2.javabot.domain.session.service.UserSessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.*;
 
+@Order(50)
 @Component
 public class ExpenseCommand implements Command {
 

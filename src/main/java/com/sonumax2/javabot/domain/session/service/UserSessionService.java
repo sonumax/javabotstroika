@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Objects;
 
 @Service
 public class UserSessionService {
@@ -34,19 +35,27 @@ public class UserSessionService {
     }
 
     public Locale getLocale(long chatId) {
-        return Locale.forLanguageTag(getOnCreateUserSession(chatId).getLocale());
+        String tag = getOnCreateUserSession(chatId).getLocale();
+        if (tag == null || tag.isBlank()) tag = "ru";
+        return Locale.forLanguageTag(tag);
     }
 
     public void setLocale(long chatId, String locale) {
-        UserSession userSession = getOnCreateUserSession(chatId);
-        userSession.setLocale(locale);
-        userSessionRepository.save(userSession);
+        int updated = userSessionRepository.updateLocale(chatId, locale);
+        if (updated > 0) return;
+
+        ensureExists(chatId);
+        userSessionRepository.updateLocale(chatId, locale);
     }
 
     public void setUserState(long chatId, UserState userState) {
-        UserSession userSession = getOnCreateUserSession(chatId);
-        userSession.setUserState(userState);
-        userSessionRepository.save(userSession);
+        String state = userState.name();
+
+        int updated = userSessionRepository.updateUserState(chatId, state);
+        if (updated > 0) return;
+
+        ensureExists(chatId);
+        userSessionRepository.updateUserState(chatId, state);
     }
 
     public String displayName(long chatId) {
@@ -66,11 +75,28 @@ public class UserSessionService {
         User tgUser = extractUser(update);
         if (tgUser == null) return;
 
+        String newFirstName = buildDisplayName(tgUser);
+        String newUsername = normalizeUsername(tgUser.getUserName());
+
         UserSession s = getOnCreateUserSession(chatId);
-        s.setFirstName(buildDisplayName(tgUser));
-        s.setUsername(normalizeUsername(tgUser.getUserName()));
-        userSessionRepository.save(s);
+
+        boolean changed = false;
+
+        if (!Objects.equals(s.getFirstName(), newFirstName)) {
+            s.setFirstName(newFirstName);
+            changed = true;
+        }
+
+        if (!Objects.equals(s.getUsername(), newUsername)) {
+            s.setUsername(newUsername);
+            changed = true;
+        }
+
+        if (changed) {
+            userSessionRepository.save(s);
+        }
     }
+
 
     private long extractChatId(Update u) {
         if (u == null) return 0;
@@ -117,13 +143,27 @@ public class UserSessionService {
     }
 
     public void setPanelMessageId(long chatId, Integer messageId) {
-        UserSession s = getOnCreateUserSession(chatId);
-        s.setPanelMessageId(messageId == null ? null : messageId.longValue());
-        userSessionRepository.save(s);
+        Long newVal = (messageId == null) ? null : messageId.longValue();
+
+        int updated = userSessionRepository.updatePanelId(chatId, newVal);
+        if (updated > 0) return;
+
+        ensureExists(chatId);
+        userSessionRepository.updatePanelId(chatId, newVal);
     }
 
     public void clearPanelMessageId(long chatId) {
         setPanelMessageId(chatId, null);
+    }
+
+    private void ensureExists(long chatId) {
+        userSessionRepository.findByChatId(chatId).orElseGet(() -> {
+            UserSession s = new UserSession();
+            s.setChatId(chatId);
+            s.setUserState(UserState.IDLE);
+            s.setLocale("ru");
+            return userSessionRepository.save(s);
+        });
     }
 
     private String safe(String s) { return s == null ? "" : s.trim(); }

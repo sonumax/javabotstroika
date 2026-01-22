@@ -1,8 +1,7 @@
-package com.sonumax2.javabot.domain.reference.sevrice;
+package com.sonumax2.javabot.domain.reference.service;
 
 import com.sonumax2.javabot.domain.reference.Counterparty;
 import com.sonumax2.javabot.domain.reference.CounterpartyKind;
-import com.sonumax2.javabot.domain.reference.Nomenclature;
 import com.sonumax2.javabot.domain.reference.repo.CounterpartyRepository;
 import com.sonumax2.javabot.util.NameNormUtils;
 import org.springframework.dao.DataIntegrityViolationException;
