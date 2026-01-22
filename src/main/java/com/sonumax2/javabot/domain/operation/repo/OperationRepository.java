@@ -9,9 +9,9 @@ import java.util.Optional;
 
 public interface OperationRepository extends ListCrudRepository<Operation, Long> {
 
-    List<Operation> findTop10ByChatIdAndIsCancelledFalseAndCreatedAtAfterOrderByCreatedAtDesc(
+    List<Operation> findTop10ByChatIdAndCancelledFalseAndCreatedAtAfterOrderByCreatedAtDesc(
             long chatId, LocalDateTime since
     );
+    Optional<Operation> findTop1ByChatIdAndCancelledFalseOrderByCreatedAtDesc(long chatId);
     Optional<Operation> findByIdAndChatId(long id, long chatId);
-    Optional<Operation> findTop1ByChatIdAndIsCancelledFalseOrderByCreatedAtDesc(long chatId);
 }

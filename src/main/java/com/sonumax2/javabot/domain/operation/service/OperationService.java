@@ -19,7 +19,7 @@ public class OperationService {
     }
 
     public List<Operation> myRecent24h(long chatId) {
-        return repo.findTop10ByChatIdAndIsCancelledFalseAndCreatedAtAfterOrderByCreatedAtDesc(
+        return repo.findTop10ByChatIdAndCancelledFalseAndCreatedAtAfterOrderByCreatedAtDesc(
                 chatId, LocalDateTime.now().minusHours(24)
         );
     }
@@ -30,7 +30,7 @@ public class OperationService {
     }
 
     public Optional<Operation> myLastActive(long chatId) {
-        return repo.findTop1ByChatIdAndIsCancelledFalseOrderByCreatedAtDesc(chatId);
+        return repo.findTop1ByChatIdAndCancelledFalseOrderByCreatedAtDesc(chatId);
     }
 
     @Transactional

@@ -30,7 +30,7 @@ public class AboutCommand implements Command {
             String data = update.getCallbackQuery().getData();
             return Cb.is(data, CbParts.ABOUT);
         }
-        return extractCommand(update).filter("/about"::equals).isPresent();
+        return extractCommand(update).filter("about"::equals).isPresent();
     }
 
     @Override

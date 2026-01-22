@@ -8,5 +8,6 @@
 
     <include file="001-init.xml" relativeToChangelogFile="true"/>
     <include file="002-alter-user-session-user-state.xml" relativeToChangelogFile="true"/>
+    <include file="003-expense-receipt-type.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

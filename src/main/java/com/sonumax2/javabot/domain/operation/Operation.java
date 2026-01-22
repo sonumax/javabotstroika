@@ -20,7 +20,7 @@ public class Operation {
     @Column("created_at") private LocalDateTime createdAt;
     @Column("updated_at") private LocalDateTime updatedAt;
     @Column("updated_by") private Long updatedBy;
-    @Column("is_cancelled") private boolean isCancelled = false;
+    @Column("is_cancelled") private boolean cancelled  = false;
     @Column("cancelled_at") private LocalDateTime cancelledAt;
     @Column("cancelled_by") private Long cancelledBy;
     @Column("cancel_reason") private String cancelReason;
@@ -82,8 +82,8 @@ public class Operation {
     public Long getUpdatedBy() { return updatedBy; }
     public void setUpdatedBy(Long updatedBy) { this.updatedBy = updatedBy; }
 
-    public boolean isCancelled() { return isCancelled; }
-    public void setCancelled(boolean cancelled) { isCancelled = cancelled; }
+    public boolean isCancelled() { return cancelled ; }
+    public void setCancelled(boolean cancelled) {  this.cancelled = cancelled;; }
 
     public LocalDateTime getCancelledAt() { return cancelledAt; }
     public void setCancelledAt(LocalDateTime cancelledAt) { this.cancelledAt = cancelledAt; }

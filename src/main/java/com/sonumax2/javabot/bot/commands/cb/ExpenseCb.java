@@ -160,4 +160,16 @@ public class ExpenseCb {
     public static boolean isConfirmEditNotePick(String data) { return eq(data, confirm(CbParts.EDIT_NOTE)); }
     public static boolean isConfirmCancelPick(String data) { return eq(data, confirmCancel()); }
     public static boolean isConfirmBackPick(String data) { return eq(data, confirmBack()); }
+
+    // ---------------- receipt ----------------
+
+    public static String receiptPrefix() { return ns(CbParts.RECEIPT); }
+    public static boolean isReceipt(String data) { return starts(data, receiptPrefix()); }
+
+    public static String receiptPick(String type) { return Cb.makeCb(NS, CbParts.RECEIPT, type); } // exp:receipt:RECEIPT
+    public static String receiptBack() { return back(receiptPrefix()); }                           // exp:receipt:back
+
+    public static boolean isReceiptBackPick(String data) { return eq(data, receiptBack()); }
+    public static String receiptType(String data) { return Cb.tail(data, NS, CbParts.RECEIPT); }  // вернёт RECEIPT/...
+
 }

@@ -11,6 +11,7 @@ public class Expense {
     @Column("object_id") private Long objectId;
     @Column("nomenclature_id") private Long nomenclatureId;
     @Column("counterparty_id") private Long counterpartyId; // nullable
+    @Column("receipt_type") private ReceiptType receiptType = ReceiptType.RECEIPT;
 
     public Expense() {}
 
@@ -32,4 +33,7 @@ public class Expense {
 
     public Long getCounterpartyId() {return counterpartyId;}
     public void setCounterpartyId(Long counterpartyId) {this.counterpartyId = counterpartyId;}
+
+    public ReceiptType getReceiptType() { return receiptType; }
+    public void setReceiptType(ReceiptType receiptType) { this.receiptType = receiptType; }
 }

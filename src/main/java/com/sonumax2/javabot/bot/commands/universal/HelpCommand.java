@@ -31,7 +31,7 @@ public class HelpCommand implements Command {
             String data = update.getCallbackQuery().getData();
             return Cb.is(data, CbParts.HELP);
         }
-        return extractCommand(update).filter("/help"::equals).isPresent();
+        return extractCommand(update).filter("help"::equals).isPresent();
     }
 
     @Override

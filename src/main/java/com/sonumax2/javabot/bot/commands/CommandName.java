@@ -1,11 +1,14 @@
 package com.sonumax2.javabot.bot.commands;
 
 public enum CommandName {
-    ABOUT("ABOUT_COMMAND"),
-    LANGUAGE("LANGUAGE_COMMAND"),
-    HELP("HELP_COMMAND"),
-    START("START_COMMAND"),
-    ADD_OPERATION("ADD_OPERATION");
+    ABOUT("about"),
+    LANGUAGE("language"),
+    HELP("help"),
+    START("start"),
+    ADD_OPERATION("addOperation"),
+    UNKNOWN("unknown"),
+    ADVANCE("advance"),
+    EXPENSE("expense");
 
     private final String name;
 

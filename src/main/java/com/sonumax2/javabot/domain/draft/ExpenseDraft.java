@@ -1,5 +1,6 @@
 package com.sonumax2.javabot.domain.draft;
 
+import com.sonumax2.javabot.domain.operation.ReceiptType;
 import com.sonumax2.javabot.domain.reference.CounterpartyKind;
 
 import java.math.BigDecimal;
@@ -33,4 +34,5 @@ public class ExpenseDraft {
 
     // Telegram file_id (если фото одно)
     public String photoFileId;
+    public ReceiptType receiptType = ReceiptType.RECEIPT;
 }

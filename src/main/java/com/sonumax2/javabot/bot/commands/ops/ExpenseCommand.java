@@ -1,5 +1,6 @@
 package com.sonumax2.javabot.bot.commands.ops;
 
+import com.sonumax2.javabot.bot.commands.CommandName;
 import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.commands.Command;
 import com.sonumax2.javabot.bot.commands.cb.ExpenseCb;
@@ -249,6 +250,22 @@ public class ExpenseCommand implements Command {
         }
 
 
+
+
+        if (ExpenseCb.isReceipt(data)) {
+            if (ExpenseCb.isReceiptBackPick(data)) {
+                // вернуться на предыдущий шаг
+                return;
+            }
+            ExpenseDraft d = draft(chatId);
+            d.receiptType = com.sonumax2.javabot.domain.operation.ReceiptType.valueOf(ExpenseCb.receiptType(data));
+            draftService.save(chatId, DRAFT_TYPE, d);
+
+            // дальше -> confirm или следующий шаг
+            return;
+        }
+
+
     }
 
     private void showChoseObjectMenuEditMessage(long chatId, int messageId) {
@@ -356,6 +373,15 @@ public class ExpenseCommand implements Command {
                 keyboardService.backInline(chatId, ExpenseCb.amountBack())
         );
     }
+
+
+
+    private void showReceiptMenu(long chatId, int messageId) {
+        // добавь новый стейт, если хочешь: EXPENSE_WAIT_RECEIPT
+        ui.editKey(chatId, messageId, "receipt.ask",
+                keyboardService.receiptInline(chatId, ExpenseCb.receiptPrefix(), /*back*/ ExpenseCb.noteBack()));
+    }
+
 
 
 
@@ -573,6 +599,6 @@ public class ExpenseCommand implements Command {
 
     @Override
     public String getCommand() {
-        return "EXPENSE";
+        return CommandName.EXPENSE.getName();
     }
 }

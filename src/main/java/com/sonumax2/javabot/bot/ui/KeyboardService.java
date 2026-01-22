@@ -177,6 +177,21 @@ public class KeyboardService {
                 .build();
     }
 
+    public InlineKeyboardMarkup receiptInline(Long chatId, String pickPrefix, String backCallback) {
+        InlineKeyboardRow row1 = row(
+                btn(chatId, "receipt.has", Cb.makeCb(pickPrefix, "RECEIPT")),
+                btn(chatId, "receipt.invoice", Cb.makeCb(pickPrefix, "INVOICE"))
+        );
+        InlineKeyboardRow row2 = row(
+                btn(chatId, "receipt.none", Cb.makeCb(pickPrefix, "NO_RECEIPT"))
+        );
+
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(row1, row2, backRow(chatId, backCallback)))
+                .build();
+    }
+
+
     // ---------------- small builders ----------------
 
     private InlineKeyboardRow backRow(Long chatId, String backCallback) {

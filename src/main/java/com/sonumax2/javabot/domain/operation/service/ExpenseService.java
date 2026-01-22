@@ -1,6 +1,7 @@
 package com.sonumax2.javabot.domain.operation.service;
 
 import com.sonumax2.javabot.domain.operation.Expense;
+import com.sonumax2.javabot.domain.operation.ReceiptType;
 import com.sonumax2.javabot.domain.reference.Counterparty;
 import com.sonumax2.javabot.domain.operation.repo.ExpenseRepository;
 import com.sonumax2.javabot.domain.reference.sevrice.CounterpartyService;
@@ -26,7 +27,7 @@ public class ExpenseService {
     }
 
     @Transactional
-    public Expense saveDetail(long operationId, long objectId, long nomenclatureId, Long counterpartyId) {
+    public Expense saveDetail(long operationId, long objectId, long nomenclatureId, Long counterpartyId, ReceiptType receiptType) {
         Expense e = expenseRepo.findByOperationId(operationId).orElse(null);
         if (e == null) {
             e = new Expense(operationId, objectId, nomenclatureId, counterpartyId);
@@ -35,6 +36,7 @@ public class ExpenseService {
             e.setNomenclatureId(nomenclatureId);
             e.setCounterpartyId(counterpartyId);
         }
+        e.setReceiptType(receiptType == null ? ReceiptType.RECEIPT : receiptType);
         return expenseRepo.save(e);
     }
 

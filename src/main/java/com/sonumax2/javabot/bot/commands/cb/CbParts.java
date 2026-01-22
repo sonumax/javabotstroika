@@ -50,4 +50,6 @@ public final class CbParts {
 
     // -------- errors --------
     public static final String ERR = "err";
+
+    public static final String RECEIPT = "receipt";
 }

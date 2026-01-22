@@ -1,5 +1,6 @@
 package com.sonumax2.javabot.bot.commands.ops;
 
+import com.sonumax2.javabot.bot.commands.CommandName;
 import com.sonumax2.javabot.bot.commands.cb.AdvanceCb;
 import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.commands.Command;
@@ -499,6 +500,6 @@ public class AdvanceCommand implements Command {
 
     @Override
     public String getCommand() {
-        return "ADVANCE";
+        return CommandName.ADVANCE.getName();
     }
 }

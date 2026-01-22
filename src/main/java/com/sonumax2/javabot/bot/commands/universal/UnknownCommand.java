@@ -1,6 +1,7 @@
 package com.sonumax2.javabot.bot.commands.universal;
 
 import com.sonumax2.javabot.bot.commands.Command;
+import com.sonumax2.javabot.bot.commands.CommandName;
 import com.sonumax2.javabot.bot.ui.BotUi;
 import com.sonumax2.javabot.bot.ui.KeyboardService;
 import org.springframework.stereotype.Service;
@@ -25,15 +26,11 @@ public class UnknownCommand implements Command {
     @Override
     public void handle(Update update) {
         Long chatId = update.getMessage().getChatId();
-        ui.msg(
-                chatId,
-                "unknown.command",
-                keyboardService.mainMenuInline(chatId)
-        );
+        ui.sendKey(chatId, "unknown.command", keyboardService.mainMenuInline(chatId));
     }
 
     @Override
     public String getCommand() {
-        return "unknown";
+        return CommandName.UNKNOWN.getName();
     }
 }
