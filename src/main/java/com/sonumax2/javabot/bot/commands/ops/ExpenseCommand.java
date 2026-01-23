@@ -10,7 +10,11 @@ import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.DraftType;
 import com.sonumax2.javabot.domain.draft.ExpenseDraft;
 import com.sonumax2.javabot.domain.draft.service.DraftService;
+import com.sonumax2.javabot.domain.operation.Operation;
+import com.sonumax2.javabot.domain.operation.OperationType;
+import com.sonumax2.javabot.domain.operation.ReceiptType;
 import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
+import com.sonumax2.javabot.domain.operation.service.ExpenseSaveService;
 import com.sonumax2.javabot.domain.operation.service.ExpenseService;
 import com.sonumax2.javabot.domain.reference.Counterparty;
 import com.sonumax2.javabot.domain.reference.Nomenclature;
@@ -30,6 +34,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Order(50)
@@ -53,8 +58,9 @@ public class ExpenseCommand implements Command {
             UserState.EXPENSE_WAIT_AMOUNT,
             UserState.EXPENSE_WAIT_DATE,
             UserState.EXPENSE_WAIT_DATE_TEXT,
+            UserState.EXPENSE_WAIT_DOC_TYPE,
+            UserState.EXPENSE_WAIT_DOC_FILE,
             UserState.EXPENSE_WAIT_NOTE,
-            UserState.EXPENSE_WAIT_PHOTO,
             UserState.EXPENSE_CONFIRM
     );
 
@@ -67,6 +73,7 @@ public class ExpenseCommand implements Command {
     private final NomenclatureService nomenclatureService;
     private final CounterpartyService counterpartyService;
     private final ExpenseService expenseService;
+    private final ExpenseSaveService expenseSaveService;
 
     public ExpenseCommand(
             KeyboardService keyboardService,
@@ -75,7 +82,7 @@ public class ExpenseCommand implements Command {
             OperationRepository operationRepository,
             BotUi ui,
             WorkObjectService workObjectService,
-            NomenclatureService nomenclatureService, CounterpartyService counterpartyService, ExpenseService expenseService
+            NomenclatureService nomenclatureService, CounterpartyService counterpartyService, ExpenseService expenseService, ExpenseSaveService expenseSaveService
     ) {
         this.keyboardService = keyboardService;
         this.userSessionService = userSessionService;
@@ -86,6 +93,7 @@ public class ExpenseCommand implements Command {
         this.nomenclatureService = nomenclatureService;
         this.counterpartyService = counterpartyService;
         this.expenseService = expenseService;
+        this.expenseSaveService = expenseSaveService;
     }
 
     @Override
@@ -103,8 +111,8 @@ public class ExpenseCommand implements Command {
             long chatId = update.getMessage().getChatId();
             UserState st = userSessionService.getUserState(chatId);
 
-            if (update.getMessage().hasPhoto()) {
-                return st == UserState.EXPENSE_WAIT_PHOTO;
+            if (update.getMessage().hasPhoto() || update.getMessage().hasDocument()) {
+                return st == UserState.EXPENSE_WAIT_DOC_FILE;
             }
 
             if (update.getMessage().hasText()) {
@@ -129,8 +137,8 @@ public class ExpenseCommand implements Command {
             return;
         }
 
-        if (update.hasMessage() && update.getMessage().hasPhoto()) {
-            handlePhoto(update);
+        if (update.hasMessage() && (update.getMessage().hasPhoto() || update.getMessage().hasDocument())) {
+            handleDocFile(update);
         }
     }
 
@@ -163,6 +171,13 @@ public class ExpenseCommand implements Command {
 
             if (ExpenseCb.isObjectPick(data)) {
                 saveObject(chatId, ExpenseCb.pickObjectId(data));
+
+                if (draft(chatId).returnToConfirm) {
+                    setConfirm(chatId, false);
+                    showConfirmPanel(chatId, mode);
+                    return;
+                }
+
                 showChoseNomenclaturePanel(chatId, mode);
                 return;
             }
@@ -194,20 +209,41 @@ public class ExpenseCommand implements Command {
                 if (d.pendingNomenclatureName != null && !d.pendingNomenclatureName.isBlank()) {
                     createNewNomenclature(chatId, d.pendingNomenclatureName);
                 }
+
+                if (d.returnToConfirm) {
+                    setConfirm(chatId, false);
+                    showConfirmPanel(chatId, mode);
+                    return;
+                }
+
                 showChoseCounterpartyPanel(chatId, mode);
                 return;
             }
 
             if (ExpenseCb.isNomenclaturePick(data)) {
                 saveNomenclature(chatId, ExpenseCb.pickNomenclatureId(data));
+
+                if (draft(chatId).returnToConfirm) {
+                    setConfirm(chatId, false);
+                    showConfirmPanel(chatId, mode);
+                    return;
+                }
                 showChoseCounterpartyPanel(chatId, mode);
                 return;
             }
         }
 
         if (ExpenseCb.isCounterparty(data)) {
-            if (ExpenseCb.isCounterpartyBackPick(data)) {
-                showChoseNomenclaturePanel(chatId, mode);
+            if (ExpenseCb.isCounterpartySkipPick(data)) {
+                saveCounterparty(chatId, null);
+
+                if (draft(chatId).returnToConfirm) {
+                    setConfirm(chatId, false);
+                    showConfirmPanel(chatId, mode);
+                    return;
+                }
+
+                showEnterAmountPanel(chatId, mode);
                 return;
             }
 
@@ -237,12 +273,24 @@ public class ExpenseCommand implements Command {
                 if (d.pendingCounterpartyName != null && !d.pendingCounterpartyName.isBlank()) {
                     createNewCounterparty(chatId, d.pendingCounterpartyName);
                 }
+
+                if (d.returnToConfirm) {
+                    setConfirm(chatId, false);
+                    showConfirmPanel(chatId, mode);
+                    return;
+                }
+
                 showEnterAmountPanel(chatId, mode);
                 return;
             }
 
             if (ExpenseCb.isCounterpartyPick(data)) {
                 saveCounterparty(chatId, ExpenseCb.pickCounterpartyId(data));
+                if (draft(chatId).returnToConfirm) {
+                    setConfirm(chatId, false);
+                    showConfirmPanel(chatId, mode);
+                    return;
+                }
                 showEnterAmountPanel(chatId, mode);
                 return;
             }
@@ -261,7 +309,7 @@ public class ExpenseCommand implements Command {
             }
 
             if (ExpenseCb.isDateManualBackPick(data)
-                    || ExpenseCb.isDateErrorBackPick(data)){
+                    || ExpenseCb.isDateErrorBackPick(data)) {
                 showChooseDatePanel(chatId, mode);
                 return;
             }
@@ -278,18 +326,70 @@ public class ExpenseCommand implements Command {
             d.date = date;
             draftService.save(chatId, DRAFT_TYPE, d);
 
-//            if (d.returnToConfirm) {
-//                setConfirm(chatId, false);
-//                showConfirmPanel(chatId, mode);
-//                return;
-//            }
+            if (d.returnToConfirm) {
+                setConfirm(chatId, false);
+                showConfirmPanel(chatId, mode);
+                return;
+            }
 
-            showEnterNotePanel(chatId, mode);
+            showChooseDocTypePanel(chatId, mode);
+            return;
+        }
+
+        if (ExpenseCb.isDoc(data)) {
+            if (ExpenseCb.isDocBackPick(data)) {
+                showChooseDatePanel(chatId, mode);
+                return;
+            }
+
+            if (ExpenseCb.isDocFileBackPick(data)) {
+                showChooseDocTypePanel(chatId, mode);
+                return;
+            }
+
+            if (ExpenseCb.isDocFileSkipPick(data)) {
+                ExpenseDraft d = draft(chatId);
+                d.photoFileId = null;
+
+                boolean toConfirm = d.returnToConfirm;
+                d.returnToConfirm = false;
+                draftService.save(chatId, DRAFT_TYPE, d);
+
+                if (toConfirm) {
+                    showConfirmPanel(chatId, mode);
+                } else {
+                    showEnterNotePanel(chatId, mode);
+                }
+                return;
+            }
+
+            ExpenseDraft d = draft(chatId);
+            d.receiptType = ReceiptType.valueOf(ExpenseCb.docType(data));
+
+            d.photoFileId = null;
+            draftService.save(chatId, DRAFT_TYPE, d);
+
+            if (d.receiptType == ReceiptType.NO_RECEIPT) {
+                if (d.returnToConfirm) {
+                    setConfirm(chatId, false);
+                    showConfirmPanel(chatId, mode);
+                    return;
+                }
+                showEnterNotePanel(chatId, mode);
+                return;
+            }
+            showSendDocFilePanel(chatId, mode);
             return;
         }
 
         if (ExpenseCb.isNoteBackPick(data)) {
-            showChooseDatePanel(chatId, mode);
+            ExpenseDraft d = draft(chatId);
+
+            if (d.receiptType == null || d.receiptType == ReceiptType.NO_RECEIPT) {
+                showChooseDocTypePanel(chatId, mode);
+            } else {
+                showSendDocFilePanel(chatId, mode);
+            }
             return;
         }
 
@@ -302,34 +402,71 @@ public class ExpenseCommand implements Command {
                 setConfirm(chatId, false);
             }
 
-//            showReceiptPanel(chatId, mode);
+            showConfirmPanel(chatId, mode);
             return;
         }
 
-
-
-        if (ExpenseCb.isReceipt(data)) {
-            if (ExpenseCb.isReceiptBackPick(data)) {
-                // вернуться на предыдущий шаг
+        if (ExpenseCb.isConfirmPick(data)) {
+            if (ExpenseCb.isConfirmSavePick(data)) {
+                saveExpense(chatId, mode);
                 return;
             }
-            ExpenseDraft d = draft(chatId);
-            d.receiptType = com.sonumax2.javabot.domain.operation.ReceiptType.valueOf(ExpenseCb.receiptType(data));
-            draftService.save(chatId, DRAFT_TYPE, d);
+            if (ExpenseCb.isConfirmEditObjectPick(data)) {
+                setConfirm(chatId, true);
+                showChoseObjectPanel(chatId, mode);
+                return;
+            }
+            if (ExpenseCb.isConfirmEditItemPick(data)) {
+                setConfirm(chatId, true);
+                showChoseNomenclaturePanel(chatId, mode);
+                return;
+            }
+            if (ExpenseCb.isConfirmEditCpPick(data)) {
+                setConfirm(chatId, true);
+                showChoseCounterpartyPanel(chatId, mode);
+                return;
+            }
+            if (ExpenseCb.isConfirmEditAmountPick(data)) {
+                setConfirm(chatId, true);
+                showEnterAmountPanel(chatId, mode);
+                return;
+            }
+            if (ExpenseCb.isConfirmEditDatePick(data)) {
+                setConfirm(chatId, true);
+                showChooseDatePanel(chatId, mode);
+                return;
+            }
+            if (ExpenseCb.isConfirmEditDocPick(data)) {
+                setConfirm(chatId, true);
+                showChooseDocTypePanel(chatId, mode);
+                return;
+            }
+            if (ExpenseCb.isConfirmAttachFilePick(data)) {
+                setConfirm(chatId, true);
 
-            // дальше -> confirm или следующий шаг
-            return;
+                ExpenseDraft d = draft(chatId);
+                if (d.receiptType == null || d.receiptType == ReceiptType.NO_RECEIPT) {
+                    showChooseDocTypePanel(chatId, mode);
+                } else {
+                    showSendDocFilePanel(chatId, mode);
+                }
+                return;
+            }
+            if (ExpenseCb.isConfirmEditNotePick(data)) {
+                setConfirm(chatId, true);
+                showEnterNotePanel(chatId, mode);
+                return;
+            }
+            if (ExpenseCb.isConfirmCancelPick(data)) {
+                goToMainMenu(chatId, "cancelled", mode);
+                return;
+            }
+            if (ExpenseCb.isConfirmBackPick(data)) {
+                showConfirmPanel(chatId, mode);
+                return;
+            }
         }
-
-
     }
-
-    private void showReceiptMenu(long chatId, int messageId) {
-        // добавь новый стейт, если хочешь: EXPENSE_WAIT_RECEIPT
-        ui.editKey(chatId, messageId, "receipt.ask",
-                keyboardService.receiptInline(chatId, ExpenseCb.receiptPrefix(), /*back*/ ExpenseCb.noteBack()));
-    }
-
 
     private void handleText(Update update) {
         long chatId = update.getMessage().getChatId();
@@ -340,7 +477,8 @@ public class ExpenseCommand implements Command {
 
         switch (st) {
             case EXPENSE_WAIT_OBJECT_TEXT -> createNewObjectAndShowNextMenu(chatId, text, mode);
-            case EXPENSE_WAIT_NOMENCLATURE_PICK, EXPENSE_WAIT_NOMENCLATURE_SUGGEST -> searchOrSelectNomenclaturePanel(chatId, text, mode);
+            case EXPENSE_WAIT_NOMENCLATURE_PICK, EXPENSE_WAIT_NOMENCLATURE_SUGGEST ->
+                    searchOrSelectNomenclaturePanel(chatId, text, mode);
             case EXPENSE_WAIT_NEW_NOMENCLATURE_TEXT -> createNewNomenclatureAndShowNextMenu(chatId, text, mode);
             case EXPENSE_WAIT_CP_PICK, EXPENSE_WAIT_CP_SUGGEST -> selectOrSearchCounterparty(chatId, text, mode);
             case EXPENSE_WAIT_CP_TEXT -> createNewCounterpartyAndShowNextMenu(chatId, text, mode);
@@ -354,17 +492,33 @@ public class ExpenseCommand implements Command {
         }
     }
 
-    private void handlePhoto(Update update) {
+    private void handleDocFile(Update update) {
         long chatId = update.getMessage().getChatId();
-        var photos = update.getMessage().getPhoto();
-        if (photos == null || photos.isEmpty()) return;
-
         ExpenseDraft d = draft(chatId);
-        d.photoFileId = photos.get(photos.size() - 1).getFileId();
+
+        String fileId = null;
+
+        if (update.getMessage().hasPhoto()) {
+            var photos = update.getMessage().getPhoto();
+            if (photos == null || photos.isEmpty()) return;
+            fileId = photos.get(photos.size() - 1).getFileId();
+        } else if (update.getMessage().hasDocument()) {
+            fileId = update.getMessage().getDocument().getFileId();
+        } else return;
+
+        d.photoFileId = fileId;
+
+        boolean toConfirm = d.returnToConfirm;
+        d.returnToConfirm = false;
         draftService.save(chatId, DRAFT_TYPE, d);
 
-        // TODO: дальше — confirm/сохранение операции
+        if (toConfirm) {
+            showConfirmPanel(chatId, PanelMode.MOVE_DOWN);
+        } else {
+            showEnterNotePanel(chatId, PanelMode.MOVE_DOWN);
+        }
     }
+
 
     private void showChoseObjectPanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.EXPENSE_WAIT_OBJECT);
@@ -401,6 +555,13 @@ public class ExpenseCommand implements Command {
     private void createNewObjectAndShowNextMenu(long chatId, String text, PanelMode mode) {
         WorkObject wo = workObjectService.getOrCreate(text, chatId);
         saveObject(chatId, wo.getId());
+
+        if (draft(chatId).returnToConfirm) {
+            setConfirm(chatId, false);
+            showConfirmPanel(chatId, mode);
+            return;
+        }
+
         showChoseNomenclaturePanel(chatId, mode);
     }
 
@@ -441,10 +602,16 @@ public class ExpenseCommand implements Command {
 
         if (nomenclature.isPresent()) {
             saveNomenclature(chatId, nomenclature.get().getId());
+
+            if (draft(chatId).returnToConfirm) {
+                setConfirm(chatId, false);
+                showConfirmPanel(chatId, mode);
+                return;
+            }
+
             showChoseCounterpartyPanel(chatId, mode);
             return;
         }
-
         showSimpleOrAskCreateNomenclaturePanel(chatId, text, mode);
     }
 
@@ -473,6 +640,13 @@ public class ExpenseCommand implements Command {
 
     private void createNewNomenclatureAndShowNextMenu(long chatId, String text, PanelMode mode) {
         createNewNomenclature(chatId, text);
+
+        if (draft(chatId).returnToConfirm) {
+            setConfirm(chatId, false);
+            showConfirmPanel(chatId, mode);
+            return;
+        }
+
         showChoseCounterpartyPanel(chatId, mode);
     }
 
@@ -516,6 +690,13 @@ public class ExpenseCommand implements Command {
 
     private void createNewCounterpartyAndShowNextMenu(long chatId, String text, PanelMode mode) {
         createNewCounterparty(chatId, text);
+
+        if (draft(chatId).returnToConfirm) {
+            setConfirm(chatId, false);
+            showConfirmPanel(chatId, mode);
+            return;
+        }
+
         showEnterAmountPanel(chatId, mode);
     }
 
@@ -529,6 +710,13 @@ public class ExpenseCommand implements Command {
 
         if (cp.isPresent()) {
             saveCounterparty(chatId, cp.get().getId());
+
+            if (draft(chatId).returnToConfirm) {
+                setConfirm(chatId, false);
+                showConfirmPanel(chatId, mode);
+                return;
+            }
+
             showEnterAmountPanel(chatId, mode);
             return;
         }
@@ -588,7 +776,7 @@ public class ExpenseCommand implements Command {
         draftService.save(chatId, DRAFT_TYPE, d);
 
         if (toConfirm) {
-//            showConfirmPanel(chatId, mode);
+            showConfirmPanel(chatId, mode);
         } else {
             showChooseDatePanel(chatId, mode);
         }
@@ -649,9 +837,9 @@ public class ExpenseCommand implements Command {
         draftService.save(chatId, DRAFT_TYPE, d);
 
         if (toConfirm) {
-//            showConfirmPanel(chatId, mode);
+            showConfirmPanel(chatId, mode);
         } else {
-            showEnterNotePanel(chatId, mode);
+            showChooseDocTypePanel(chatId, mode);
         }
     }
 
@@ -662,6 +850,34 @@ public class ExpenseCommand implements Command {
                 mode,
                 keyMessage,
                 keyboardService.backInline(chatId, ExpenseCb.errorDateBack())
+        );
+    }
+
+    private void showChooseDocTypePanel(long chatId, PanelMode mode) {
+        userSessionService.setUserState(chatId, UserState.EXPENSE_WAIT_DOC_TYPE);
+
+        ExpenseDraft d = draft(chatId);
+        String backCallback = d.returnToConfirm ? ExpenseCb.confirmBack() : ExpenseCb.docBack();
+
+        ui.panelKey(
+                chatId,
+                mode,
+                "receipt.ask",
+                keyboardService.receiptInline(chatId, ExpenseCb.docPrefix(), backCallback)
+        );
+    }
+
+    private void showSendDocFilePanel(long chatId, PanelMode mode) {
+        userSessionService.setUserState(chatId, UserState.EXPENSE_WAIT_DOC_FILE);
+
+        ExpenseDraft d = draft(chatId);
+        String back = d.returnToConfirm ? ExpenseCb.confirmBack() : ExpenseCb.docFileBack();
+
+        ui.panelKey(
+                chatId,
+                mode,
+                "receipt.askFile",
+                keyboardService.backSkipInline(chatId, back, ExpenseCb.docFileSkip())
         );
     }
 
@@ -688,8 +904,112 @@ public class ExpenseCommand implements Command {
         }
 
         draftService.save(chatId, DRAFT_TYPE, d);
-//        showReceiptPanel(chatId, mode);
+        showConfirmPanel(chatId, mode);
     }
+
+    private void showConfirmPanel(long chatId, PanelMode mode) {
+        userSessionService.setUserState(chatId, UserState.EXPENSE_CONFIRM);
+
+        ExpenseDraft d = draft(chatId);
+
+        String obj = workObjectService.findActiveById(d.objectId)
+                .map(WorkObject::getName)
+                .orElse("—");
+
+        String item = nomenclatureService.findActiveById(d.nomenclatureId)
+                .map(Nomenclature::getName)
+                .orElse("—");
+
+        String cp = counterpartyService.findActiveById(d.counterpartyId)
+                .map(Counterparty::getName)
+                .orElse("—");
+
+        String doc = "—";
+        if (d.receiptType != null) {
+            String key = switch (d.receiptType) {
+                case RECEIPT -> "expense.doc.receipt";
+                case INVOICE -> "expense.doc.invoice";
+                case NO_RECEIPT -> "expense.doc.none";
+            };
+
+            doc = ui.msg(chatId, key);
+
+            if (d.receiptType != ReceiptType.NO_RECEIPT) {
+                String fileKey = (d.photoFileId != null)
+                        ? "expense.doc.file.ok"
+                        : "expense.doc.file.miss";
+                doc += " " + ui.msg(chatId, fileKey);
+            }
+        }
+
+        boolean showAttach = d.receiptType != null && d.receiptType != ReceiptType.NO_RECEIPT;
+
+        String attachKey = (d.photoFileId == null || d.photoFileId.isBlank())
+                ? "btnAttachFile"
+                : "btnReplaceFile";
+
+        ui.panelKey(
+                chatId,
+                mode,
+                "expense.confirm",
+                keyboardService.confirmExpenseInline(chatId, ExpenseCb.NS, showAttach, attachKey),
+                obj,
+                item,
+                cp,
+                d.amount,
+                d.date,
+                doc,
+                (d.note == null ? "—" : d.note)
+        );
+    }
+
+    private void saveExpense(long chatId, PanelMode mode) {
+        ExpenseDraft d = draft(chatId);
+
+        // ---- mandatory checks ----
+        if (d.objectId == null) {
+            setConfirm(chatId, true);
+            showChoseObjectPanel(chatId, mode);
+            return;
+        }
+        if (d.nomenclatureId == null) {
+            setConfirm(chatId, true);
+            showChoseNomenclaturePanel(chatId, mode);
+            return;
+        }
+        if (d.amount == null) {
+            setConfirm(chatId, true);
+            showEnterAmountPanel(chatId, mode);
+            return;
+        }
+        if (d.date == null) {
+            setConfirm(chatId, true);
+            showChooseDatePanel(chatId, mode);
+            return;
+        }
+        if (d.receiptType == null) {
+            setConfirm(chatId, true);
+            showChooseDocTypePanel(chatId, mode);
+            return;
+        }
+
+        expenseSaveService.saveExpense(
+                chatId,
+                d.objectId,
+                d.nomenclatureId,
+                d.counterpartyId,
+                d.receiptType,
+                d.amount,
+                d.date,
+                d.note,
+                d.photoFileId
+        );
+
+        String name = userSessionService.displayName(chatId);
+
+        goToMainMenu(chatId, "expense.saved", mode, name, d.amount, d.date);
+    }
+
 
     private void goToMainMenu(long chatId, String keyMessage, PanelMode mode, Object... args) {
         draftService.clear(chatId, DRAFT_TYPE);
@@ -733,6 +1053,10 @@ public class ExpenseCommand implements Command {
 
         switch (st) {
             case EXPENSE_WAIT_OBJECT -> showChoseObjectPanel(chatId, mode);
+            case EXPENSE_WAIT_DOC_TYPE -> showChooseDocTypePanel(chatId, mode);
+            case EXPENSE_WAIT_DOC_FILE -> showSendDocFilePanel(chatId, mode);
+            case EXPENSE_WAIT_DATE -> showChooseDatePanel(chatId, mode);
+            case ADVANCE_CONFIRM -> showConfirmPanel(chatId, mode);
 
             default -> { /* ничего */ }
         }

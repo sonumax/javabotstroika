@@ -19,6 +19,11 @@ public class WorkObjectService {
         this.repo = repo;
     }
 
+    public Optional<WorkObject> findActiveById(Long id) {
+        if (id == null) return Optional.empty();
+        return repo.findById(id).filter(WorkObject::isActive);
+    }
+
     public List<WorkObject> listActive() {
         return repo.findByActiveTrueOrderByNameAsc();
     }

@@ -27,17 +27,17 @@ public class ExpenseService {
     }
 
     @Transactional
-    public Expense saveDetail(long operationId, long objectId, long nomenclatureId, Long counterpartyId, ReceiptType receiptType) {
-        Expense e = expenseRepo.findByOperationId(operationId).orElse(null);
-        if (e == null) {
-            e = new Expense(operationId, objectId, nomenclatureId, counterpartyId);
-        } else {
-            e.setObjectId(objectId);
-            e.setNomenclatureId(nomenclatureId);
-            e.setCounterpartyId(counterpartyId);
-        }
-        e.setReceiptType(receiptType == null ? ReceiptType.RECEIPT : receiptType);
-        return expenseRepo.save(e);
+    public Expense saveDetail(long operationId,
+                              long objectId,
+                              long nomenclatureId,
+                              Long counterpartyId,
+                              ReceiptType receiptType) {
+
+        ReceiptType rt = (receiptType == null ? ReceiptType.RECEIPT : receiptType);
+        expenseRepo.upsertExpense(operationId, objectId, nomenclatureId, counterpartyId, rt.name());
+
+        return expenseRepo.findByOperationId(operationId)
+                .orElseThrow(() -> new IllegalStateException("Expense not saved for operationId=" + operationId));
     }
 
     @Transactional

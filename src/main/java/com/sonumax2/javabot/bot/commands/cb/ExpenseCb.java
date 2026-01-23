@@ -173,10 +173,30 @@ public class ExpenseCb {
     public static String dateIso(String data) { return Cb.tail(data, NS, CbParts.DATE); }
 
     // ---------------- doc ----------------
-    public static String docPick() { return prefix(CbParts.DOCUMENT); } // открыть экран
-    public static String docType(String type) { return cb(docPick(), type); } // RECEIPT/INVOICE/NONE
-    public static String docBack() { return back(docPick()); }
+    // exp:doc:...
 
+    public static String docPrefix() { return prefix(CbParts.DOC); }
+    public static boolean isDoc(String data) { return starts(data, docPrefix()); }
+
+    /** exp:doc:<ReceiptType>  (RECEIPT/INVOICE/NO_RECEIPT) */
+    public static String docPick(String receiptTypeEnumName) {
+        return Cb.makeCb(NS, CbParts.DOC, receiptTypeEnumName);
+    }
+
+    /** вернёт RECEIPT/INVOICE/NO_RECEIPT */
+    public static String docType(String data) { return Cb.tail(data, NS, CbParts.DOC); }
+
+    /** exp:doc:back */
+    public static String docBack() { return back(docPrefix()); }
+    public static boolean isDocBackPick(String data) { return eq(data, docBack()); }
+
+    // exp:doc:file:skip
+    public static String docFileSkip() { return Cb.makeCb(docPrefix(), CbParts.FILE, CbParts.SKIP); }
+    public static boolean isDocFileSkipPick(String data) { return eq(data, docFileSkip()); }
+
+    /** exp:doc:file:back (назад с экрана "пришли файл") */
+    public static String docFileBack() { return Cb.makeCb(docPrefix(), CbParts.FILE, CbParts.BACK); }
+    public static boolean isDocFileBackPick(String data) { return eq(data, docFileBack()); }
     // ---------------- confirm ----------------
     // exp:confirm:...
     public static String confirmPrefix() { return prefix(CbParts.CONFIRM); }
@@ -192,8 +212,13 @@ public class ExpenseCb {
     public static boolean isConfirmEditDatePick(String data) { return eq(data, confirm(CbParts.EDIT_DATE)); }
     public static boolean isConfirmEditAmountPick(String data) { return eq(data, confirm(CbParts.EDIT_AMOUNT)); }
     public static boolean isConfirmEditNotePick(String data) { return eq(data, confirm(CbParts.EDIT_NOTE)); }
+    public static boolean isConfirmEditObjectPick(String data) { return eq(data, confirm(CbParts.EDIT_OBJECT)); }
+    public static boolean isConfirmEditItemPick(String data)   { return eq(data, confirm(CbParts.EDIT_ITEM)); }
+    public static boolean isConfirmEditCpPick(String data)     { return eq(data, confirm(CbParts.EDIT_CP)); }
+    public static boolean isConfirmEditDocPick(String data)    { return eq(data, confirm(CbParts.EDIT_DOC)); }
     public static boolean isConfirmCancelPick(String data) { return eq(data, confirmCancel()); }
     public static boolean isConfirmBackPick(String data) { return eq(data, confirmBack()); }
+    public static boolean isConfirmAttachFilePick(String data) { return eq(data, confirm(CbParts.ATTACH_FILE)); }
 
     public static String getConfirmAction(String data) { return Cb.tail(data, NS, CbParts.CONFIRM); }
 
@@ -211,3 +236,4 @@ public class ExpenseCb {
     public static boolean isReceiptBackPick(String data) { return eq(data, receiptBack()); }
     public static String receiptType(String data) { return Cb.tail(data, NS, CbParts.RECEIPT); }
 }
+

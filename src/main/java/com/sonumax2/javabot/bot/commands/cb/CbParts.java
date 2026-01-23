@@ -23,7 +23,7 @@ public final class CbParts {
     public static final String NOMENCLATURE = "item";
     public static final String COUNTERPARTY = "counterparty";
 
-    public static final String DOCUMENT      = "doc";
+    public static final String DOC = "doc";
     public static final String DATE      = "date";
     public static final String AMOUNT    = "amount";
     public static final String NOTE      = "note";
@@ -36,6 +36,7 @@ public final class CbParts {
     public static final String SEARCH = "search";
     public static final String SKIP   = "skip";
     public static final String BACK   = "back";
+    public static final String FILE   = "file";
 
     // -------- date actions --------
     public static final String TODAY     = "today";
@@ -48,6 +49,12 @@ public final class CbParts {
     public static final String EDIT_DATE   = "editDate";
     public static final String EDIT_AMOUNT = "editAmount";
     public static final String EDIT_NOTE   = "editNote";
+    public static final String EDIT_OBJECT = "editObj";
+    public static final String EDIT_ITEM   = "editItem";
+    public static final String EDIT_CP     = "editCp";
+    public static final String EDIT_DOC    = "editDoc";
+
+    public static final String ATTACH_FILE = "attachFile";
 
     // -------- errors --------
     public static final String ERR = "err";

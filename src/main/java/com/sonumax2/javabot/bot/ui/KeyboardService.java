@@ -84,6 +84,7 @@ public class KeyboardService {
                 .build();
     }
 
+
     public <T extends BaseRefEntity> InlineKeyboardMarkup listTwoInOneInline(
             long chatId,
             List<T> list,
@@ -221,6 +222,52 @@ public class KeyboardService {
         return InlineKeyboardMarkup.builder()
                 .keyboard(List.of(row1, row2, backRow(chatId, backCallback)))
                 .build();
+    }
+
+    public InlineKeyboardMarkup confirmExpenseInline(Long chatId, String prefix, boolean showAttach, String attachBtnKey) {
+        InlineKeyboardRow row1 = row(
+                btn(chatId, "btnSave", cb(prefix, CbParts.CONFIRM, CbParts.SAVE)),
+                btn(chatId, "btnCancel", cb(prefix, CbParts.CONFIRM, CbParts.CANCEL))
+        );
+
+        InlineKeyboardRow row2 = row(
+                btn(chatId, "btnEditObject", cb(prefix, CbParts.CONFIRM, CbParts.EDIT_OBJECT)),
+                btn(chatId, "btnEditItem",   cb(prefix, CbParts.CONFIRM, CbParts.EDIT_ITEM))
+        );
+
+        InlineKeyboardRow row3 = row(
+                btn(chatId, "btnEditCp",  cb(prefix, CbParts.CONFIRM, CbParts.EDIT_CP)),
+                btn(chatId, "btnEditDoc", cb(prefix, CbParts.CONFIRM, CbParts.EDIT_DOC))
+        );
+
+        InlineKeyboardRow row4 = row(
+                btn(chatId, "btnEditDate",   cb(prefix, CbParts.CONFIRM, CbParts.EDIT_DATE)),
+                btn(chatId, "btnEditAmount", cb(prefix, CbParts.CONFIRM, CbParts.EDIT_AMOUNT))
+        );
+
+        InlineKeyboardRow row5 = row();
+        if (showAttach) {
+            row5 = row(
+                    btn(chatId, attachBtnKey, cb(prefix, CbParts.CONFIRM, CbParts.ATTACH_FILE)),
+                    btn(chatId, "btnEditNote", cb(prefix, CbParts.CONFIRM, CbParts.EDIT_NOTE))
+            );
+        } else {
+            row5 = row(
+                    btn(chatId, "btnEditNote", cb(prefix, CbParts.CONFIRM, CbParts.EDIT_NOTE))
+            );
+        }
+
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(row1, row2, row3, row4, row5))
+                .build();
+    }
+
+    public InlineKeyboardMarkup backSkipInline(long chatId, String backCallback, String skipCallback) {
+        InlineKeyboardRow row = row(
+                btn(chatId, "btnBack", backCallback),
+                btn(chatId, "btnSkip", skipCallback)
+        );
+        return InlineKeyboardMarkup.builder().keyboard(List.of(row)).build();
     }
 
 

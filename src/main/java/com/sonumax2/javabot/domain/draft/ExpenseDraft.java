@@ -33,8 +33,6 @@ public class ExpenseDraft {
     public String note;
 
     public String docType;    // "RECEIPT" | "INVOICE" | null
-    public String docFileId;  // file_id из Telegram
-
     // Telegram file_id (если фото одно)
     public String photoFileId;
     public ReceiptType receiptType = ReceiptType.RECEIPT;

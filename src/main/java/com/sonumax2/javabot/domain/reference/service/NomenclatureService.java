@@ -19,6 +19,11 @@ public class NomenclatureService {
         this.repo = repo;
     }
 
+    public Optional<Nomenclature> findActiveById(Long id) {
+        if (id == null) return Optional.empty();
+        return repo.findById(id).filter(Nomenclature::isActive);
+    }
+
     public List<Nomenclature> listActive() {
         return repo.findByActiveTrueOrderByNameAsc();
     }

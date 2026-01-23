@@ -20,6 +20,11 @@ public class CounterpartyService {
         this.repo = repo;
     }
 
+    public Optional<Counterparty> findActiveById(Long id) {
+        if (id == null) return Optional.empty();
+        return repo.findById(id).filter(Counterparty::isActive);
+    }
+
     public List<Counterparty> listActive() {
         return repo.findByActiveTrueOrderByNameAsc();
     }

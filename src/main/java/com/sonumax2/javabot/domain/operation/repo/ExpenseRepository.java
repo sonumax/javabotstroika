@@ -1,6 +1,7 @@
 package com.sonumax2.javabot.domain.operation.repo;
 
 import com.sonumax2.javabot.domain.operation.Expense;
+import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.ListCrudRepository;
 
@@ -11,40 +12,54 @@ public interface ExpenseRepository extends ListCrudRepository<Expense, Long> {
 
     // convenient finders
     Optional<Expense> findByOperationId(long operationId);
-    boolean existsByOperationId(long operationId);
 
     List<Expense> findByObjectId(long objectId);
+
     List<Expense> findByNomenclatureId(long nomenclatureId);
+
     List<Expense> findByCounterpartyId(long counterpartyId);
+
     List<Expense> findByObjectIdAndNomenclatureId(long objectId, long nomenclatureId);
+
+    @Modifying
+    @Query("""
+            insert into expense(operation_id, object_id, nomenclature_id, counterparty_id, receipt_type)
+            values (:operationId, :objectId, :nomenclatureId, :counterpartyId, :receiptType)
+            on conflict (operation_id) do update
+            set object_id = excluded.object_id,
+                nomenclature_id = excluded.nomenclature_id,
+                counterparty_id = excluded.counterparty_id,
+                receipt_type = excluded.receipt_type
+            """)
+    void upsertExpense(long operationId, long objectId, long nomenclatureId, Long counterpartyId, String receiptType);
 
     /**
      * Suggest Nomenclature: first by chat (most used), then fallback to overall.
      * Sorting: count desc (top used) + last date desc (freshness).
      */
     @Query("""
-        select e.nomenclature_id
-        from expense e
-        join operation o on o.id = e.operation_id
-        where o.is_cancelled = false
-          and o.chat_id = :chatId
-          and e.nomenclature_id is not null
-        group by e.nomenclature_id
-        order by count(*) desc, max(o.op_date) desc
-        limit :limit
-    """)
+                select e.nomenclature_id
+                from expense e
+                join operation o on o.id = e.operation_id
+                where o.is_cancelled = false
+                  and o.chat_id = :chatId
+                  and e.nomenclature_id is not null
+                group by e.nomenclature_id
+                order by count(*) desc, max(o.op_date) desc
+                limit :limit
+            """)
     List<Long> topNomenclatureIdsByChat(long chatId, int limit);
 
     @Query("""
-        select e.nomenclature_id
-        from expense e
-        join operation o on o.id = e.operation_id
-        where o.is_cancelled = false
-          and e.nomenclature_id is not null
-        group by e.nomenclature_id
-        order by count(*) desc, max(o.op_date) desc
-        limit :limit
-    """)
+                select e.nomenclature_id
+                from expense e
+                join operation o on o.id = e.operation_id
+                where o.is_cancelled = false
+                  and e.nomenclature_id is not null
+                group by e.nomenclature_id
+                order by count(*) desc, max(o.op_date) desc
+                limit :limit
+            """)
     List<Long> topNomenclatureIdsOverall(int limit);
 
     /**
@@ -52,28 +67,28 @@ public interface ExpenseRepository extends ListCrudRepository<Expense, Long> {
      * Sorting: count desc + свежесть.
      */
     @Query("""
-        select e.counterparty_id
-        from expense e
-        join operation o on o.id = e.operation_id
-        where o.is_cancelled = false
-          and e.nomenclature_id = :nomId
-          and e.counterparty_id is not null
-        group by e.counterparty_id
-        order by count(*) desc, max(o.op_date) desc
-        limit :limit
-    """)
+                select e.counterparty_id
+                from expense e
+                join operation o on o.id = e.operation_id
+                where o.is_cancelled = false
+                  and e.nomenclature_id = :nomId
+                  and e.counterparty_id is not null
+                group by e.counterparty_id
+                order by count(*) desc, max(o.op_date) desc
+                limit :limit
+            """)
     List<Long> topCounterpartyIdsByNomenclature(long nomId, int limit);
 
     @Query("""
-        select e.counterparty_id
-        from expense e
-        join operation o on o.id = e.operation_id
-        where o.is_cancelled = false
-          and e.counterparty_id is not null
-        group by e.counterparty_id
-        order by count(*) desc, max(o.op_date) desc
-        limit :limit
-    """)
+                select e.counterparty_id
+                from expense e
+                join operation o on o.id = e.operation_id
+                where o.is_cancelled = false
+                  and e.counterparty_id is not null
+                group by e.counterparty_id
+                order by count(*) desc, max(o.op_date) desc
+                limit :limit
+            """)
     List<Long> topCounterpartyIdsOverall(int limit);
 
     /**
@@ -81,16 +96,16 @@ public interface ExpenseRepository extends ListCrudRepository<Expense, Long> {
      * сначала (chatId + nomId), потом (nomId overall), потом overall.
      */
     @Query("""
-        select e.counterparty_id
-        from expense e
-        join operation o on o.id = e.operation_id
-        where o.is_cancelled = false
-          and o.chat_id = :chatId
-          and e.nomenclature_id = :nomId
-          and e.counterparty_id is not null
-        group by e.counterparty_id
-        order by count(*) desc, max(o.op_date) desc
-        limit :limit
-    """)
+                select e.counterparty_id
+                from expense e
+                join operation o on o.id = e.operation_id
+                where o.is_cancelled = false
+                  and o.chat_id = :chatId
+                  and e.nomenclature_id = :nomId
+                  and e.counterparty_id is not null
+                group by e.counterparty_id
+                order by count(*) desc, max(o.op_date) desc
+                limit :limit
+            """)
     List<Long> topCounterpartyIdsByChatAndNomenclature(long chatId, long nomId, int limit);
 }
