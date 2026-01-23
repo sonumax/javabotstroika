@@ -23,6 +23,7 @@ public final class CbParts {
     public static final String NOMENCLATURE = "item";
     public static final String COUNTERPARTY = "counterparty";
 
+    public static final String DOCUMENT      = "doc";
     public static final String DATE      = "date";
     public static final String AMOUNT    = "amount";
     public static final String NOTE      = "note";

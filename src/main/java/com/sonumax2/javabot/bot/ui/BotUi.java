@@ -150,6 +150,10 @@ public class BotUi {
         return replacePanelText(chatId, oldMessageId, msg(chatId, key, args), kb);
     }
 
+    public void notify(long chatId, String key, Object... args) {
+        sendKey(chatId, key, null, args);
+    }
+
     // -------- internal --------
 
     private int sendPanelTextReturnId(long chatId, String text, ReplyKeyboard kb) {

@@ -12,7 +12,6 @@ import java.time.LocalDate;
 public class ExpenseDraft {
 
     // meta (панель/confirm-режим)
-    public Integer panelMessageId;
     public boolean returnToConfirm;
 
     // данные операции
@@ -32,6 +31,9 @@ public class ExpenseDraft {
     public BigDecimal amount;
     public LocalDate date;
     public String note;
+
+    public String docType;    // "RECEIPT" | "INVOICE" | null
+    public String docFileId;  // file_id из Telegram
 
     // Telegram file_id (если фото одно)
     public String photoFileId;

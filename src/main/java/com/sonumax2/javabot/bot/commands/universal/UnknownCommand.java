@@ -5,6 +5,8 @@ import com.sonumax2.javabot.bot.commands.CommandName;
 import com.sonumax2.javabot.bot.ui.BotUi;
 import com.sonumax2.javabot.bot.ui.KeyboardService;
 import com.sonumax2.javabot.bot.ui.PanelMode;
+import com.sonumax2.javabot.domain.session.UserSession;
+import com.sonumax2.javabot.domain.session.UserState;
 import com.sonumax2.javabot.domain.session.service.UserSessionService;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
@@ -32,7 +34,7 @@ public class UnknownCommand implements Command {
     @Override
     public void handle(Update update) {
         long chatId = update.getMessage().getChatId();
-
+        userSessionService.setUserState(chatId, UserState.IDLE);
         ui.panelKey(
                 chatId,
                 PanelMode.MOVE_DOWN,

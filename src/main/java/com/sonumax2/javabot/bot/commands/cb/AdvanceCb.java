@@ -58,7 +58,7 @@ public final class AdvanceCb {
     // ---------------- date ----------------
 
     /** adv:date */
-    public static boolean isDatePick(String data) { return starts(data, datePrefix()); }
+    public static boolean isDate(String data) { return starts(data, datePrefix()); }
     public static boolean isDateManualPick(String data) { return data != null && Cb.is(data, datePrefix(), CbParts.MANUAL); }
     public static boolean isDateYesterdayPick(String data) { return data != null && Cb.is(data, datePrefix(), CbParts.YESTERDAY); }
 

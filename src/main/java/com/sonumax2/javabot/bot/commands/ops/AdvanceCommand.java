@@ -37,11 +37,14 @@ public class AdvanceCommand implements Command {
     private static final String PREVIEW_MENU = CbParts.ADD_OPR;
     private static final DraftType DRAFT_TYPE = DraftType.ADVANCE;
 
-    private static final EnumSet<UserState> ADV_TEXT_STATES = EnumSet.of(
+    private static final EnumSet<UserState> FLOW_STATES = EnumSet.of(
+            UserState.ADVANCE_WAIT_DATE,
             UserState.ADVANCE_WAIT_DATE_TEXT,
             UserState.ADVANCE_WAIT_AMOUNT,
-            UserState.ADVANCE_WAIT_NOTE
+            UserState.ADVANCE_WAIT_NOTE,
+            UserState.ADVANCE_CONFIRM
     );
+
 
     private final KeyboardService keyboardService;
     private final UserSessionService userSessionService;
@@ -70,40 +73,17 @@ public class AdvanceCommand implements Command {
             UserState st = userSessionService.getUserState(chatId);
 
             if (AdvanceCb.isStartPick(data)) return true;
-
-            if (AdvanceCb.isDatePick(data) || AdvanceCb.isDateErrorBackPick(data)) {
-                return st == UserState.ADVANCE_WAIT_DATE || st == UserState.ADVANCE_WAIT_DATE_TEXT;
-            }
-
-            if (AdvanceCb.isAmountBackPick(data) || AdvanceCb.isAmountErrorBackPick(data)) {
-                return st == UserState.ADVANCE_WAIT_AMOUNT;
-            }
-
-            if (AdvanceCb.isNoteSkipPick(data) || AdvanceCb.isNoteBackPick(data)) {
-                return st == UserState.ADVANCE_WAIT_NOTE;
-            }
-
-            if (AdvanceCb.isConfirmPick(data)) {
-                if (AdvanceCb.isConfirmBackPick(data)) {
-                    if (st == UserState.ADVANCE_CONFIRM) return true;
-                    if (st == UserState.ADVANCE_WAIT_DATE
-                            || st == UserState.ADVANCE_WAIT_DATE_TEXT
-                            || st == UserState.ADVANCE_WAIT_AMOUNT
-                            || st == UserState.ADVANCE_WAIT_NOTE) {
-                        return draft(chatId).returnToConfirm;
-                    }
-                    return false;
-                }
-                return st == UserState.ADVANCE_CONFIRM;
-            }
-
-            return false;
+            return data.startsWith(AdvanceCb.NS) && FLOW_STATES.contains(st);
         }
 
         if (update.hasMessage() && update.getMessage().hasText()) {
             long chatId = update.getMessage().getChatId();
+            String text = update.getMessage().getText();
+            if (text != null && text.startsWith("/")) return false;
+
             UserState st = userSessionService.getUserState(chatId);
-            return ADV_TEXT_STATES.contains(st);
+
+            return FLOW_STATES.contains(st);
         }
 
         return false;
@@ -125,13 +105,14 @@ public class AdvanceCommand implements Command {
         String data = cq.getData();
         long chatId = cq.getMessage().getChatId();
         int messageId = cq.getMessage().getMessageId();
+        PanelMode mode = PanelMode.EDIT;
 
         ui.setPanelId(chatId, messageId);
         ui.ack(cq.getId());
 
         if (AdvanceCb.isStartPick(data)) {
             draftService.clear(chatId, DRAFT_TYPE);
-            showChooseDatePanel(chatId);
+            showChooseDatePanel(chatId, mode);
             return;
         }
 
@@ -139,14 +120,14 @@ public class AdvanceCommand implements Command {
                 || AdvanceCb.isDateManualBackPick(data)
                 || AdvanceCb.isAmountBackPick(data)
                 || AdvanceCb.isAmountErrorBackPick(data)) {
-            showChooseDatePanel(chatId);
+            showChooseDatePanel(chatId, mode);
             return;
         }
 
-        if (AdvanceCb.isDatePick(data)) {
+        if (AdvanceCb.isDate(data)) {
             AdvanceDraft d = draft(chatId);
             if (AdvanceCb.isDateManualPick(data)) {
-                showEnterDatePanel(chatId);
+                showEnterDatePanel(chatId, mode);
                 return;
             }
 
@@ -158,16 +139,16 @@ public class AdvanceCommand implements Command {
 
             if (d.returnToConfirm) {
                 setConfirm(chatId, false);
-                showConfirmPanel(chatId, PanelMode.EDIT);
+                showConfirmPanel(chatId, mode);
                 return;
             }
 
-            showEnterAmountPanel(chatId, PanelMode.EDIT);
+            showEnterAmountPanel(chatId, mode);
             return;
         }
 
         if (AdvanceCb.isNoteBackPick(data)) {
-            showEnterAmountPanel(chatId, PanelMode.EDIT);
+            showEnterAmountPanel(chatId, mode);
             return;
         }
 
@@ -180,36 +161,36 @@ public class AdvanceCommand implements Command {
                 setConfirm(chatId, false);
             }
 
-            showConfirmPanel(chatId, PanelMode.EDIT);
+            showConfirmPanel(chatId, mode);
             return;
         }
 
         if (AdvanceCb.isConfirmPick(data)) {
             if (AdvanceCb.isConfirmSavePick(data)) {
-                saveAdvance(chatId);
+                saveAdvance(chatId, mode);
                 return;
             }
             if (AdvanceCb.isConfirmEditDatePick(data)) {
                 setConfirm(chatId, true);
-                showChooseDatePanel(chatId);
+                showChooseDatePanel(chatId, mode);
                 return;
             }
             if (AdvanceCb.isConfirmEditAmountPick(data)) {
                 setConfirm(chatId, true);
-                showEnterAmountPanel(chatId, PanelMode.EDIT);
+                showEnterAmountPanel(chatId, mode);
                 return;
             }
             if (AdvanceCb.isConfirmEditNotePick(data)) {
                 setConfirm(chatId, true);
-                showEnterNotePanel(chatId, PanelMode.EDIT);
+                showEnterNotePanel(chatId, mode);
                 return;
             }
             if (AdvanceCb.isConfirmCancelPick(data)) {
-                goToMainMenu(chatId, "cancelled", PanelMode.EDIT);
+                goToMainMenu(chatId, "cancelled", mode);
                 return;
             }
             if (AdvanceCb.isConfirmBackPick(data)) {
-                showConfirmPanel(chatId, PanelMode.EDIT);
+                showConfirmPanel(chatId, mode);
             }
         }
     }
@@ -219,18 +200,19 @@ public class AdvanceCommand implements Command {
         String text = update.getMessage().getText();
 
         UserState st = userSessionService.getUserState(chatId);
+        PanelMode mode = PanelMode.MOVE_DOWN;
 
         switch (st) {
-            case ADVANCE_WAIT_DATE_TEXT -> checkAndSaveDate(chatId, text);
-            case ADVANCE_WAIT_AMOUNT -> checkAndSaveAmount(chatId, text);
-            case ADVANCE_WAIT_NOTE -> checkAndSaveNote(chatId, text);
+            case ADVANCE_WAIT_DATE_TEXT -> checkAndSaveDate(chatId, text, mode);
+            case ADVANCE_WAIT_AMOUNT -> checkAndSaveAmount(chatId, text, mode);
+            case ADVANCE_WAIT_NOTE -> checkAndSaveNote(chatId, text, mode);
             default -> {
-                // ignore
+                refreshCurrentPanel(chatId, mode);
             }
         }
     }
 
-    private void showChooseDatePanel(long chatId) {
+    private void showChooseDatePanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.ADVANCE_WAIT_DATE);
 
         AdvanceDraft d = draft(chatId);
@@ -238,50 +220,50 @@ public class AdvanceCommand implements Command {
 
         ui.panelKey(
                 chatId,
-                PanelMode.EDIT,
+                mode,
                 "advance.askDate",
                 keyboardService.datePickerInline(chatId, AdvanceCb.NS, backCallback)
         );
     }
 
-    private void showEnterDatePanel(long chatId) {
+    private void showEnterDatePanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.ADVANCE_WAIT_DATE_TEXT);
         ui.panelKey(
                 chatId,
-                PanelMode.EDIT,
+                mode,
                 "advance.enterDate",
                 keyboardService.backInline(chatId, AdvanceCb.manualDateBack())
         );
     }
 
-    private void checkAndSaveDate(long chatId, String raw) {
+    private void checkAndSaveDate(long chatId, String raw, PanelMode mode) {
         DateParseResult res = InputParseUtils.parseSmartDate(raw, LocalDate.now());
         AdvanceDraft d = draft(chatId);
 
         if (res.error != DateParseResult.Error.NONE || res.date.isAfter(LocalDate.now())) {
             String keyMessage = res.error == DateParseResult.Error.NONE ? "dateInFuture" : "dateInvalid";
-            showErrorDatePanel(chatId, keyMessage);
+            showErrorDatePanel(chatId, keyMessage, mode);
             return;
         }
 
         d.date = res.date;
+        boolean toConfirm = d.returnToConfirm;
+        d.returnToConfirm = false;
+
         draftService.save(chatId, DRAFT_TYPE, d);
 
-        if (d.returnToConfirm) {
-            d.returnToConfirm = false;
-            draftService.save(chatId, DRAFT_TYPE, d);
-            showConfirmPanel(chatId, PanelMode.MOVE_DOWN);
-            return;
+        if (toConfirm) {
+            showConfirmPanel(chatId, mode);
+        } else {
+            showEnterAmountPanel(chatId, mode);
         }
-
-        showEnterAmountPanel(chatId, PanelMode.MOVE_DOWN);
     }
 
-    private void showErrorDatePanel(long chatId, String keyMessage) {
+    private void showErrorDatePanel(long chatId, String keyMessage, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.ADVANCE_WAIT_DATE_TEXT);
         ui.panelKey(
                 chatId,
-                PanelMode.MOVE_DOWN,
+                mode,
                 keyMessage,
                 keyboardService.backInline(chatId, AdvanceCb.errorDateBack())
         );
@@ -301,29 +283,29 @@ public class AdvanceCommand implements Command {
         );
     }
 
-    private void checkAndSaveAmount(long chatId, String raw) {
+    private void checkAndSaveAmount(long chatId, String raw, PanelMode mode) {
         BigDecimal amount = InputParseUtils.parseAmount(raw);
 
         if (amount == null || amount.signum() <= 0) {
-            showErrorAmountPanel(chatId);
+            showErrorAmountPanel(chatId, mode);
             return;
         }
 
         AdvanceDraft d = draft(chatId);
         d.amount = amount;
+
+        boolean toConfirm = d.returnToConfirm;
+        d.returnToConfirm = false;
         draftService.save(chatId, DRAFT_TYPE, d);
 
-        if (d.returnToConfirm) {
-            d.returnToConfirm = false;
-            draftService.save(chatId, DRAFT_TYPE, d);
-            showConfirmPanel(chatId, PanelMode.MOVE_DOWN);
-            return;
+        if (toConfirm) {
+            showConfirmPanel(chatId, mode);
+        } else {
+            showEnterNotePanel(chatId, mode);
         }
-
-        showEnterNotePanel(chatId, PanelMode.MOVE_DOWN);
     }
 
-    private void showErrorAmountPanel(long chatId) {
+    private void showErrorAmountPanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.ADVANCE_WAIT_AMOUNT);
 
         AdvanceDraft d = draft(chatId);
@@ -331,7 +313,7 @@ public class AdvanceCommand implements Command {
 
         ui.panelKey(
                 chatId,
-                PanelMode.MOVE_DOWN,
+                mode,
                 "amountInvalid",
                 keyboardService.backInline(chatId, backCallback)
         );
@@ -351,17 +333,16 @@ public class AdvanceCommand implements Command {
         );
     }
 
-    private void checkAndSaveNote(long chatId, String raw) {
+    private void checkAndSaveNote(long chatId, String raw, PanelMode mode) {
         AdvanceDraft d = draft(chatId);
         d.note = normalizeNote(raw);
-        draftService.save(chatId, DRAFT_TYPE, d);
 
         if (d.returnToConfirm) {
             d.returnToConfirm = false;
-            draftService.save(chatId, DRAFT_TYPE, d);
         }
 
-        showConfirmPanel(chatId, PanelMode.MOVE_DOWN);
+        draftService.save(chatId, DRAFT_TYPE, d);
+        showConfirmPanel(chatId, mode);
     }
 
     private void showConfirmPanel(long chatId, PanelMode mode) {
@@ -385,19 +366,19 @@ public class AdvanceCommand implements Command {
         draftService.save(chatId, DRAFT_TYPE, d);
     }
 
-    private void saveAdvance(long chatId) {
+    private void saveAdvance(long chatId, PanelMode mode) {
         AdvanceDraft d = draft(chatId);
         String note = d.note;
 
         log.info("ADV save: chatId={}, date={}, amount={}, note={}", chatId, d.date, d.amount, note);
 
         if (d.date == null) {
-            showChooseDatePanel(chatId);
+            showChooseDatePanel(chatId, mode);
             return;
         }
 
         if (d.amount == null) {
-            showEnterAmountPanel(chatId, PanelMode.EDIT);
+            showEnterAmountPanel(chatId, mode);
             return;
         }
 
@@ -413,7 +394,7 @@ public class AdvanceCommand implements Command {
 
         String name = userSessionService.displayName(chatId);
 
-        goToMainMenu(chatId, "advance.saved", PanelMode.EDIT, name, op.getAmount(), op.getOpDate());
+        goToMainMenu(chatId, "advance.saved", mode, name, op.getAmount(), op.getOpDate());
     }
 
     private void goToMainMenu(long chatId, String keyMessage, PanelMode mode, Object... args) {
@@ -427,6 +408,17 @@ public class AdvanceCommand implements Command {
                 keyboardService.mainMenuInline(chatId),
                 args
         );
+    }
+
+    private void refreshCurrentPanel(long chatId, PanelMode mode) {
+        UserState st = userSessionService.getUserState(chatId);
+
+        switch (st) {
+            case ADVANCE_WAIT_DATE -> showChooseDatePanel(chatId, mode);
+            case ADVANCE_CONFIRM -> showConfirmPanel(chatId, mode);
+
+            default -> { /* ничего */ }
+        }
     }
 
     private String normalizeNote(String raw) {

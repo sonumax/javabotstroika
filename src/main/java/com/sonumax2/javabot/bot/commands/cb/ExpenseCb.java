@@ -103,18 +103,9 @@ public class ExpenseCb {
     public static String skipCounterparty() { return cb(CbParts.COUNTERPARTY, CbParts.SKIP); }
     public static boolean isCounterpartySkipPick(String data) { return eq(data, skipCounterparty()); }
 
-    /** exp:counterparty:pick (префикс для exp:counterparty:pick:<id>) */
-    public static String pickCounterparty() { return cb(CbParts.COUNTERPARTY, CbParts.PICK); }
-    /** exp:counterparty:pick:<id> */
-    public static boolean isCounterpartyPick(String data) { return starts(data, pickCounterparty()); }
-    public static long pickCounterpartyId(String data) { return Cb.tailLong(data, pickCounterparty()); }
-
     /** exp:counterparty:create */
     public static String createCounterparty() { return cb(CbParts.COUNTERPARTY, CbParts.CREATE); }
-    /** exp:counterparty:create:back */
-    public static String createCounterpartyBack() { return back(createCounterparty()); }
-    public static boolean isCounterpartyCreatePick(String data) { return eq(data, createCounterparty()); }
-    public static boolean isCreateCounterpartyBackPick(String data) { return eq(data, createCounterpartyBack()); }
+    public static boolean isCreateCounterpartyPick(String data) { return eq(data, createCounterparty()); }
 
     /** exp:counterparty:search:back */
     public static String searchBackCounterparty() {
@@ -122,6 +113,11 @@ public class ExpenseCb {
     }
     public static boolean isSearchBackCounterpartyPick(String data) { return eq(data, searchBackCounterparty()); }
 
+    /** exp:counterparty:pick (префикс для exp:counterparty:pick:<id>) */
+    public static String pickCounterparty() { return cb(CbParts.COUNTERPARTY, CbParts.PICK); }
+    /** exp:counterparty:pick:<id> */
+    public static boolean isCounterpartyPick(String data) { return starts(data, pickCounterparty()); }
+    public static long pickCounterpartyId(String data) { return Cb.tailLong(data, pickCounterparty()); }
 
     public static String counterpartyAction(String data) { return Cb.tail(data, counterpartyPrefix()); }
 
@@ -157,6 +153,10 @@ public class ExpenseCb {
     public static String datePrefix() { return prefix(CbParts.DATE); }
     public static boolean isDate(String data) { return starts(data, datePrefix()); }
 
+
+    /** exp:date:back */
+    public static String dateBack() { return back(datePrefix()); }
+    public static boolean isDateBackPick(String data) { return eq(data, dateBack()); }
     /** exp:date:err:back */
     public static String errorDateBack() { return Cb.makeCb(datePrefix(), CbParts.ERR, CbParts.BACK); }
     /** exp:date:manual:back */
@@ -172,9 +172,13 @@ public class ExpenseCb {
     /** вернёт yyyy-mm-dd */
     public static String dateIso(String data) { return Cb.tail(data, NS, CbParts.DATE); }
 
+    // ---------------- doc ----------------
+    public static String docPick() { return prefix(CbParts.DOCUMENT); } // открыть экран
+    public static String docType(String type) { return cb(docPick(), type); } // RECEIPT/INVOICE/NONE
+    public static String docBack() { return back(docPick()); }
+
     // ---------------- confirm ----------------
     // exp:confirm:...
-
     public static String confirmPrefix() { return prefix(CbParts.CONFIRM); }
     public static boolean isConfirmPick(String data) { return starts(data, confirmPrefix()); }
 
