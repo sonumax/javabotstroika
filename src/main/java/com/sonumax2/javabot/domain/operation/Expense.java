@@ -11,7 +11,7 @@ public class Expense {
     @Column("object_id") private Long objectId;
     @Column("nomenclature_id") private Long nomenclatureId;
     @Column("counterparty_id") private Long counterpartyId; // nullable
-    @Column("receipt_type") private DocType docType = DocType.RECEIPT;
+    @Column("receipt_type") private DocType docType = DocType.NO_RECEIPT;
 
     public Expense() {}
 

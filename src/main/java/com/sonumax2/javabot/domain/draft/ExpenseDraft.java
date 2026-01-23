@@ -34,5 +34,5 @@ public class ExpenseDraft {
 
     // Telegram file_id (если фото одно)
     public String docFileId;
-    public DocType docType = DocType.RECEIPT;
+    public DocType docType = DocType.NO_RECEIPT;
 }

@@ -2,6 +2,8 @@ package com.sonumax2.javabot.bot.commands.cb;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.OptionalLong;
 
 public final class Cb {
     private static final String SEP = ":";
@@ -73,6 +75,23 @@ public final class Cb {
                     "Tail is not a long for prefix '" + p + ":'; tail='" + t + "', data=" + data,
                     e
             );
+        }
+    }
+
+    public static OptionalLong tryTailLong(String data, int idx) {
+        try {
+            return OptionalLong.of(tailLong(data, idx));
+        } catch (RuntimeException e) {
+            return OptionalLong.empty();
+        }
+    }
+
+    public static <E extends Enum<E>> Optional<E> tryEnum(Class<E> enumClass, String raw) {
+        if (raw == null) return Optional.empty();
+        try {
+            return Optional.of(Enum.valueOf(enumClass, raw));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
         }
     }
 

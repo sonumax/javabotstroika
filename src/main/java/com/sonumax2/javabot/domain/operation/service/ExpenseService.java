@@ -33,7 +33,7 @@ public class ExpenseService {
                               Long counterpartyId,
                               DocType docType) {
 
-        DocType rt = (docType == null ? DocType.RECEIPT : docType);
+        DocType rt = (docType == null ? DocType.NO_RECEIPT : docType);
         expenseRepo.upsertExpense(operationId, objectId, nomenclatureId, counterpartyId, rt.name());
 
         return expenseRepo.findByOperationId(operationId)

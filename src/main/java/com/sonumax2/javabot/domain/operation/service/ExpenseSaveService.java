@@ -44,7 +44,7 @@ public class ExpenseSaveService {
         operationRepository.save(op);
 
         // 2) сохраняем detail (upsert)
-        DocType rt = (docType == null ? DocType.RECEIPT : docType);
+        DocType rt = (docType == null ? DocType.NO_RECEIPT : docType);
 
         expenseRepository.upsertExpense(
                 op.getId(),

@@ -2,6 +2,8 @@ package com.sonumax2.javabot.app;
 
 import com.sonumax2.javabot.bot.commands.CommandHandler;
 import com.sonumax2.javabot.domain.session.service.UserSessionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
@@ -15,6 +17,8 @@ public class MainBot implements SpringLongPollingBot, LongPollingSingleThreadUpd
     private final CommandHandler commandHandler;
     private final String botToken;
     private final UserSessionService userSessionService;
+
+    private static final Logger log = LoggerFactory.getLogger(MainBot.class);
 
     public MainBot(@Value("${bot.token}") String botToken, CommandHandler commandHandler, UserSessionService userSessionService) {
         this.botToken = botToken;
@@ -33,7 +37,11 @@ public class MainBot implements SpringLongPollingBot, LongPollingSingleThreadUpd
 
     @Override
     public void consume(Update update) {
-        userSessionService.touchFromUpdate(update);
-        commandHandler.handle(update);
+        try {
+            userSessionService.touchFromUpdate(update);
+            commandHandler.handle(update);
+        } catch (Throwable e) {
+            log.error("Unhandled error while processing update: {}", update, e);
+        }
     }
 }
