@@ -1,6 +1,6 @@
 package com.sonumax2.javabot.domain.draft;
 
-import com.sonumax2.javabot.domain.operation.ReceiptType;
+import com.sonumax2.javabot.domain.operation.DocType;
 import com.sonumax2.javabot.domain.reference.CounterpartyKind;
 
 import java.math.BigDecimal;
@@ -32,8 +32,7 @@ public class ExpenseDraft {
     public LocalDate date;
     public String note;
 
-    public String docType;    // "RECEIPT" | "INVOICE" | null
     // Telegram file_id (если фото одно)
-    public String photoFileId;
-    public ReceiptType receiptType = ReceiptType.RECEIPT;
+    public String docFileId;
+    public DocType docType = DocType.RECEIPT;
 }

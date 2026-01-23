@@ -24,14 +24,14 @@ public interface ExpenseRepository extends ListCrudRepository<Expense, Long> {
     @Modifying
     @Query("""
             insert into expense(operation_id, object_id, nomenclature_id, counterparty_id, receipt_type)
-            values (:operationId, :objectId, :nomenclatureId, :counterpartyId, :receiptType)
+            values (:operationId, :objectId, :nomenclatureId, :counterpartyId, :docType)
             on conflict (operation_id) do update
             set object_id = excluded.object_id,
                 nomenclature_id = excluded.nomenclature_id,
                 counterparty_id = excluded.counterparty_id,
                 receipt_type = excluded.receipt_type
             """)
-    void upsertExpense(long operationId, long objectId, long nomenclatureId, Long counterpartyId, String receiptType);
+    void upsertExpense(long operationId, long objectId, long nomenclatureId, Long counterpartyId, String docType);
 
     /**
      * Suggest Nomenclature: first by chat (most used), then fallback to overall.

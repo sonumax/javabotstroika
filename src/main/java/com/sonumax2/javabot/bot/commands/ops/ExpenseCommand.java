@@ -10,10 +10,7 @@ import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.DraftType;
 import com.sonumax2.javabot.domain.draft.ExpenseDraft;
 import com.sonumax2.javabot.domain.draft.service.DraftService;
-import com.sonumax2.javabot.domain.operation.Operation;
-import com.sonumax2.javabot.domain.operation.OperationType;
-import com.sonumax2.javabot.domain.operation.ReceiptType;
-import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
+import com.sonumax2.javabot.domain.operation.DocType;
 import com.sonumax2.javabot.domain.operation.service.ExpenseSaveService;
 import com.sonumax2.javabot.domain.operation.service.ExpenseService;
 import com.sonumax2.javabot.domain.reference.Counterparty;
@@ -34,7 +31,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Order(50)
@@ -67,7 +63,6 @@ public class ExpenseCommand implements Command {
     private final KeyboardService keyboardService;
     private final UserSessionService userSessionService;
     private final DraftService draftService;
-    private final OperationRepository operationRepository;
     private final BotUi ui;
     private final WorkObjectService workObjectService;
     private final NomenclatureService nomenclatureService;
@@ -79,7 +74,6 @@ public class ExpenseCommand implements Command {
             KeyboardService keyboardService,
             UserSessionService userSessionService,
             DraftService draftService,
-            OperationRepository operationRepository,
             BotUi ui,
             WorkObjectService workObjectService,
             NomenclatureService nomenclatureService, CounterpartyService counterpartyService, ExpenseService expenseService, ExpenseSaveService expenseSaveService
@@ -87,7 +81,6 @@ public class ExpenseCommand implements Command {
         this.keyboardService = keyboardService;
         this.userSessionService = userSessionService;
         this.draftService = draftService;
-        this.operationRepository = operationRepository;
         this.ui = ui;
         this.workObjectService = workObjectService;
         this.nomenclatureService = nomenclatureService;
@@ -171,14 +164,7 @@ public class ExpenseCommand implements Command {
 
             if (ExpenseCb.isObjectPick(data)) {
                 saveObject(chatId, ExpenseCb.pickObjectId(data));
-
-                if (draft(chatId).returnToConfirm) {
-                    setConfirm(chatId, false);
-                    showConfirmPanel(chatId, mode);
-                    return;
-                }
-
-                showChoseNomenclaturePanel(chatId, mode);
+                afterObject(chatId, mode);
                 return;
             }
         }
@@ -195,12 +181,12 @@ public class ExpenseCommand implements Command {
             }
 
             if (ExpenseCb.isNewNomenclatureBackPick(data)) {
-                showChoseNomenclaturePanel(chatId, mode);
+                showChooseNomenclaturePanel(chatId, mode);
                 return;
             }
 
             if (ExpenseCb.isSearchBackNomenclaturePick(data)) {
-                showChoseNomenclaturePanel(chatId, mode);
+                showChooseNomenclaturePanel(chatId, mode);
                 return;
             }
 
@@ -210,25 +196,15 @@ public class ExpenseCommand implements Command {
                     createNewNomenclature(chatId, d.pendingNomenclatureName);
                 }
 
-                if (d.returnToConfirm) {
-                    setConfirm(chatId, false);
-                    showConfirmPanel(chatId, mode);
-                    return;
-                }
+                if (goConfirmIfNeeded(chatId, mode)) return;
 
-                showChoseCounterpartyPanel(chatId, mode);
+                showChooseCounterpartyPanel(chatId, mode);
                 return;
             }
 
             if (ExpenseCb.isNomenclaturePick(data)) {
                 saveNomenclature(chatId, ExpenseCb.pickNomenclatureId(data));
-
-                if (draft(chatId).returnToConfirm) {
-                    setConfirm(chatId, false);
-                    showConfirmPanel(chatId, mode);
-                    return;
-                }
-                showChoseCounterpartyPanel(chatId, mode);
+                afterNomenclature(chatId, mode);
                 return;
             }
         }
@@ -236,20 +212,7 @@ public class ExpenseCommand implements Command {
         if (ExpenseCb.isCounterparty(data)) {
             if (ExpenseCb.isCounterpartySkipPick(data)) {
                 saveCounterparty(chatId, null);
-
-                if (draft(chatId).returnToConfirm) {
-                    setConfirm(chatId, false);
-                    showConfirmPanel(chatId, mode);
-                    return;
-                }
-
-                showEnterAmountPanel(chatId, mode);
-                return;
-            }
-
-            if (ExpenseCb.isCounterpartySkipPick(data)) {
-                saveCounterparty(chatId, null);
-                showEnterAmountPanel(chatId, mode);
+                afterCounterparty(chatId, mode);
                 return;
             }
 
@@ -259,12 +222,12 @@ public class ExpenseCommand implements Command {
             }
 
             if (ExpenseCb.isNewCounterpartyBackPick(data)) {
-                showChoseCounterpartyPanel(chatId, mode);
+                showChooseCounterpartyPanel(chatId, mode);
                 return;
             }
 
             if (ExpenseCb.isSearchBackCounterpartyPick(data)) {
-                showChoseCounterpartyPanel(chatId, mode);
+                showChooseCounterpartyPanel(chatId, mode);
                 return;
             }
 
@@ -274,11 +237,7 @@ public class ExpenseCommand implements Command {
                     createNewCounterparty(chatId, d.pendingCounterpartyName);
                 }
 
-                if (d.returnToConfirm) {
-                    setConfirm(chatId, false);
-                    showConfirmPanel(chatId, mode);
-                    return;
-                }
+                if (goConfirmIfNeeded(chatId, mode)) return;
 
                 showEnterAmountPanel(chatId, mode);
                 return;
@@ -286,19 +245,14 @@ public class ExpenseCommand implements Command {
 
             if (ExpenseCb.isCounterpartyPick(data)) {
                 saveCounterparty(chatId, ExpenseCb.pickCounterpartyId(data));
-                if (draft(chatId).returnToConfirm) {
-                    setConfirm(chatId, false);
-                    showConfirmPanel(chatId, mode);
-                    return;
-                }
-                showEnterAmountPanel(chatId, mode);
+                afterCounterparty(chatId, mode);
                 return;
             }
         }
 
         if (ExpenseCb.isAmountBackPick(data)
                 || ExpenseCb.isAmountErrorBackPick(data)) {
-            showChoseCounterpartyPanel(chatId, mode);
+            showChooseCounterpartyPanel(chatId, mode);
             return;
         }
 
@@ -322,17 +276,9 @@ public class ExpenseCommand implements Command {
             LocalDate date = LocalDate.now();
             if (ExpenseCb.isDateYesterdayPick(data)) date = date.minusDays(1);
 
-            ExpenseDraft d = draft(chatId);
-            d.date = date;
-            draftService.save(chatId, DRAFT_TYPE, d);
 
-            if (d.returnToConfirm) {
-                setConfirm(chatId, false);
-                showConfirmPanel(chatId, mode);
-                return;
-            }
-
-            showChooseDocTypePanel(chatId, mode);
+            saveDate(chatId, date);
+            afterDate(chatId, mode);
             return;
         }
 
@@ -348,60 +294,30 @@ public class ExpenseCommand implements Command {
             }
 
             if (ExpenseCb.isDocFileSkipPick(data)) {
-                ExpenseDraft d = draft(chatId);
-                d.photoFileId = null;
-
-                boolean toConfirm = d.returnToConfirm;
-                d.returnToConfirm = false;
-                draftService.save(chatId, DRAFT_TYPE, d);
-
-                if (toConfirm) {
-                    showConfirmPanel(chatId, mode);
-                } else {
-                    showEnterNotePanel(chatId, mode);
-                }
+                saveDocFileId(chatId, null);
+                afterDocFile(chatId, mode);
                 return;
             }
 
-            ExpenseDraft d = draft(chatId);
-            d.receiptType = ReceiptType.valueOf(ExpenseCb.docType(data));
-
-            d.photoFileId = null;
-            draftService.save(chatId, DRAFT_TYPE, d);
-
-            if (d.receiptType == ReceiptType.NO_RECEIPT) {
-                if (d.returnToConfirm) {
-                    setConfirm(chatId, false);
-                    showConfirmPanel(chatId, mode);
-                    return;
-                }
-                showEnterNotePanel(chatId, mode);
-                return;
-            }
-            showSendDocFilePanel(chatId, mode);
+            saveDocType(chatId, DocType.valueOf(ExpenseCb.docType(data)));
+            saveDocFileId(chatId, null);
+            afterDocType(chatId, mode);
             return;
         }
 
         if (ExpenseCb.isNoteBackPick(data)) {
             ExpenseDraft d = draft(chatId);
 
-            if (d.receiptType == null || d.receiptType == ReceiptType.NO_RECEIPT) {
+            if (d.docType == null || d.docType == DocType.NO_RECEIPT) {
                 showChooseDocTypePanel(chatId, mode);
             } else {
-                showSendDocFilePanel(chatId, mode);
+                showAttachDocFilePanel(chatId, mode);
             }
             return;
         }
 
         if (ExpenseCb.isNoteSkipPick(data)) {
-            ExpenseDraft d = draft(chatId);
-            d.note = null;
-            draftService.save(chatId, DRAFT_TYPE, d);
-
-            if (d.returnToConfirm) {
-                setConfirm(chatId, false);
-            }
-
+            saveNote(chatId, null);
             showConfirmPanel(chatId, mode);
             return;
         }
@@ -418,12 +334,12 @@ public class ExpenseCommand implements Command {
             }
             if (ExpenseCb.isConfirmEditItemPick(data)) {
                 setConfirm(chatId, true);
-                showChoseNomenclaturePanel(chatId, mode);
+                showChooseNomenclaturePanel(chatId, mode);
                 return;
             }
             if (ExpenseCb.isConfirmEditCpPick(data)) {
                 setConfirm(chatId, true);
-                showChoseCounterpartyPanel(chatId, mode);
+                showChooseCounterpartyPanel(chatId, mode);
                 return;
             }
             if (ExpenseCb.isConfirmEditAmountPick(data)) {
@@ -445,10 +361,10 @@ public class ExpenseCommand implements Command {
                 setConfirm(chatId, true);
 
                 ExpenseDraft d = draft(chatId);
-                if (d.receiptType == null || d.receiptType == ReceiptType.NO_RECEIPT) {
+                if (d.docType == null || d.docType == DocType.NO_RECEIPT) {
                     showChooseDocTypePanel(chatId, mode);
                 } else {
-                    showSendDocFilePanel(chatId, mode);
+                    showAttachDocFilePanel(chatId, mode);
                 }
                 return;
             }
@@ -493,32 +409,26 @@ public class ExpenseCommand implements Command {
     }
 
     private void handleDocFile(Update update) {
+        PanelMode mode = PanelMode.MOVE_DOWN;
         long chatId = update.getMessage().getChatId();
-        ExpenseDraft d = draft(chatId);
 
-        String fileId = null;
+        String fileId = extractFileId(update);
 
-        if (update.getMessage().hasPhoto()) {
-            var photos = update.getMessage().getPhoto();
-            if (photos == null || photos.isEmpty()) return;
-            fileId = photos.get(photos.size() - 1).getFileId();
-        } else if (update.getMessage().hasDocument()) {
-            fileId = update.getMessage().getDocument().getFileId();
-        } else return;
-
-        d.photoFileId = fileId;
-
-        boolean toConfirm = d.returnToConfirm;
-        d.returnToConfirm = false;
-        draftService.save(chatId, DRAFT_TYPE, d);
-
-        if (toConfirm) {
-            showConfirmPanel(chatId, PanelMode.MOVE_DOWN);
-        } else {
-            showEnterNotePanel(chatId, PanelMode.MOVE_DOWN);
+        if (fileId == null) {
+            ExpenseDraft d = draft(chatId);
+            ui.panelKey(
+                    chatId,
+                    mode,
+                    "docFile.invalid",
+                    keyboardService.backInline(chatId, ExpenseCb.docFileSkip())
+            );
+            draftService.save(chatId, DRAFT_TYPE, d);
+            return;
         }
-    }
 
+        saveDocFileId(chatId, fileId);
+        afterDocFile(chatId, mode);
+    }
 
     private void showChoseObjectPanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.EXPENSE_WAIT_OBJECT);
@@ -555,17 +465,10 @@ public class ExpenseCommand implements Command {
     private void createNewObjectAndShowNextMenu(long chatId, String text, PanelMode mode) {
         WorkObject wo = workObjectService.getOrCreate(text, chatId);
         saveObject(chatId, wo.getId());
-
-        if (draft(chatId).returnToConfirm) {
-            setConfirm(chatId, false);
-            showConfirmPanel(chatId, mode);
-            return;
-        }
-
-        showChoseNomenclaturePanel(chatId, mode);
+        afterObject(chatId, mode);
     }
 
-    private void showChoseNomenclaturePanel(long chatId, PanelMode mode) {
+    private void showChooseNomenclaturePanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.EXPENSE_WAIT_NOMENCLATURE_PICK);
 
         List<Nomenclature> menu = buildNomenclatureMenu(chatId, 8);
@@ -602,14 +505,7 @@ public class ExpenseCommand implements Command {
 
         if (nomenclature.isPresent()) {
             saveNomenclature(chatId, nomenclature.get().getId());
-
-            if (draft(chatId).returnToConfirm) {
-                setConfirm(chatId, false);
-                showConfirmPanel(chatId, mode);
-                return;
-            }
-
-            showChoseCounterpartyPanel(chatId, mode);
+            afterNomenclature(chatId, mode);
             return;
         }
         showSimpleOrAskCreateNomenclaturePanel(chatId, text, mode);
@@ -641,13 +537,9 @@ public class ExpenseCommand implements Command {
     private void createNewNomenclatureAndShowNextMenu(long chatId, String text, PanelMode mode) {
         createNewNomenclature(chatId, text);
 
-        if (draft(chatId).returnToConfirm) {
-            setConfirm(chatId, false);
-            showConfirmPanel(chatId, mode);
-            return;
-        }
+        if (goConfirmIfNeeded(chatId, mode)) return;
 
-        showChoseCounterpartyPanel(chatId, mode);
+        showChooseCounterpartyPanel(chatId, mode);
     }
 
     private void createNewNomenclature(long chatId, String text) {
@@ -655,7 +547,7 @@ public class ExpenseCommand implements Command {
         saveNomenclature(chatId, nomenclature.getId());
     }
 
-    private void showChoseCounterpartyPanel(long chatId, PanelMode mode) {
+    private void showChooseCounterpartyPanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.EXPENSE_WAIT_CP_PICK);
 
         List<Counterparty> menu = buildCounterpartyMenu(chatId, 8);
@@ -691,11 +583,7 @@ public class ExpenseCommand implements Command {
     private void createNewCounterpartyAndShowNextMenu(long chatId, String text, PanelMode mode) {
         createNewCounterparty(chatId, text);
 
-        if (draft(chatId).returnToConfirm) {
-            setConfirm(chatId, false);
-            showConfirmPanel(chatId, mode);
-            return;
-        }
+        if (goConfirmIfNeeded(chatId, mode)) return;
 
         showEnterAmountPanel(chatId, mode);
     }
@@ -710,14 +598,7 @@ public class ExpenseCommand implements Command {
 
         if (cp.isPresent()) {
             saveCounterparty(chatId, cp.get().getId());
-
-            if (draft(chatId).returnToConfirm) {
-                setConfirm(chatId, false);
-                showConfirmPanel(chatId, mode);
-                return;
-            }
-
-            showEnterAmountPanel(chatId, mode);
+            afterCounterparty(chatId, mode);
             return;
         }
         showSimpleOrAskCreateCounterpartyPanel(chatId, text, mode);
@@ -768,18 +649,8 @@ public class ExpenseCommand implements Command {
             return;
         }
 
-        ExpenseDraft d = draft(chatId);
-        d.amount = amount;
-
-        boolean toConfirm = d.returnToConfirm;
-        d.returnToConfirm = false;
-        draftService.save(chatId, DRAFT_TYPE, d);
-
-        if (toConfirm) {
-            showConfirmPanel(chatId, mode);
-        } else {
-            showChooseDatePanel(chatId, mode);
-        }
+        saveAmount(chatId, amount);
+        afterAmount(chatId, mode);
     }
 
     private void showErrorAmountPanel(long chatId, PanelMode mode) {
@@ -822,7 +693,6 @@ public class ExpenseCommand implements Command {
 
     private void checkAndSaveDate(long chatId, String raw, PanelMode mode) {
         DateParseResult res = InputParseUtils.parseSmartDate(raw, LocalDate.now());
-        ExpenseDraft d = draft(chatId);
 
         if (res.error != DateParseResult.Error.NONE || res.date.isAfter(LocalDate.now())) {
             String keyMessage = res.error == DateParseResult.Error.NONE ? "dateInFuture" : "dateInvalid";
@@ -830,17 +700,8 @@ public class ExpenseCommand implements Command {
             return;
         }
 
-        d.date = res.date;
-        boolean toConfirm = d.returnToConfirm;
-        d.returnToConfirm = false;
-
-        draftService.save(chatId, DRAFT_TYPE, d);
-
-        if (toConfirm) {
-            showConfirmPanel(chatId, mode);
-        } else {
-            showChooseDocTypePanel(chatId, mode);
-        }
+        saveDate(chatId, res.date);
+        afterDate(chatId, mode);
     }
 
     private void showErrorDatePanel(long chatId, String keyMessage, PanelMode mode) {
@@ -867,7 +728,7 @@ public class ExpenseCommand implements Command {
         );
     }
 
-    private void showSendDocFilePanel(long chatId, PanelMode mode) {
+    private void showAttachDocFilePanel(long chatId, PanelMode mode) {
         userSessionService.setUserState(chatId, UserState.EXPENSE_WAIT_DOC_FILE);
 
         ExpenseDraft d = draft(chatId);
@@ -896,14 +757,7 @@ public class ExpenseCommand implements Command {
     }
 
     private void checkAndSaveNote(long chatId, String raw, PanelMode mode) {
-        ExpenseDraft d = draft(chatId);
-        d.note = normalizeNote(raw);
-
-        if (d.returnToConfirm) {
-            d.returnToConfirm = false;
-        }
-
-        draftService.save(chatId, DRAFT_TYPE, d);
+        saveNote(chatId, normalizeNote(raw));
         showConfirmPanel(chatId, mode);
     }
 
@@ -925,8 +779,8 @@ public class ExpenseCommand implements Command {
                 .orElse("—");
 
         String doc = "—";
-        if (d.receiptType != null) {
-            String key = switch (d.receiptType) {
+        if (d.docType != null) {
+            String key = switch (d.docType) {
                 case RECEIPT -> "expense.doc.receipt";
                 case INVOICE -> "expense.doc.invoice";
                 case NO_RECEIPT -> "expense.doc.none";
@@ -934,17 +788,17 @@ public class ExpenseCommand implements Command {
 
             doc = ui.msg(chatId, key);
 
-            if (d.receiptType != ReceiptType.NO_RECEIPT) {
-                String fileKey = (d.photoFileId != null)
+            if (d.docType != DocType.NO_RECEIPT) {
+                String fileKey = (d.docFileId != null)
                         ? "expense.doc.file.ok"
                         : "expense.doc.file.miss";
                 doc += " " + ui.msg(chatId, fileKey);
             }
         }
 
-        boolean showAttach = d.receiptType != null && d.receiptType != ReceiptType.NO_RECEIPT;
+        boolean showAttach = d.docType != null && d.docType != DocType.NO_RECEIPT;
 
-        String attachKey = (d.photoFileId == null || d.photoFileId.isBlank())
+        String attachKey = (d.docFileId == null || d.docFileId.isBlank())
                 ? "btnAttachFile"
                 : "btnReplaceFile";
 
@@ -963,6 +817,48 @@ public class ExpenseCommand implements Command {
         );
     }
 
+    private void afterObject(long chatId, PanelMode mode) {
+        if (goConfirmIfNeeded(chatId, mode)) return;
+        showChooseNomenclaturePanel(chatId, mode);
+    }
+
+    private void afterNomenclature(long chatId, PanelMode mode) {
+        if (goConfirmIfNeeded(chatId, mode)) return;
+        showChooseCounterpartyPanel(chatId, mode);
+    }
+
+    private void afterCounterparty(long chatId, PanelMode mode) {
+        if (goConfirmIfNeeded(chatId, mode)) return;
+        showEnterAmountPanel(chatId, mode);
+    }
+
+    private void afterAmount(long chatId, PanelMode mode) {
+        if (goConfirmIfNeeded(chatId, mode)) return;
+        showChooseDatePanel(chatId, mode);
+    }
+
+    private void afterDate(long chatId, PanelMode mode) {
+        if (goConfirmIfNeeded(chatId, mode)) return;
+        showChooseDocTypePanel(chatId, mode);
+    }
+
+    private void afterDocType(long chatId, PanelMode mode) {
+        if (goConfirmIfNeeded(chatId, mode)) return;
+
+        ExpenseDraft d = draft(chatId);
+        if (d.docType != null && d.docType.needsFile()) {
+            showAttachDocFilePanel(chatId, mode);
+        } else {
+            showEnterNotePanel(chatId, mode);
+        }
+    }
+
+    private void afterDocFile(long chatId, PanelMode mode) {
+        if (goConfirmIfNeeded(chatId, mode)) return;
+        showEnterNotePanel(chatId, mode);
+    }
+
+
     private void saveExpense(long chatId, PanelMode mode) {
         ExpenseDraft d = draft(chatId);
 
@@ -974,7 +870,7 @@ public class ExpenseCommand implements Command {
         }
         if (d.nomenclatureId == null) {
             setConfirm(chatId, true);
-            showChoseNomenclaturePanel(chatId, mode);
+            showChooseNomenclaturePanel(chatId, mode);
             return;
         }
         if (d.amount == null) {
@@ -987,7 +883,7 @@ public class ExpenseCommand implements Command {
             showChooseDatePanel(chatId, mode);
             return;
         }
-        if (d.receiptType == null) {
+        if (d.docType == null) {
             setConfirm(chatId, true);
             showChooseDocTypePanel(chatId, mode);
             return;
@@ -998,18 +894,17 @@ public class ExpenseCommand implements Command {
                 d.objectId,
                 d.nomenclatureId,
                 d.counterpartyId,
-                d.receiptType,
+                d.docType,
                 d.amount,
                 d.date,
                 d.note,
-                d.photoFileId
+                d.docFileId
         );
 
         String name = userSessionService.displayName(chatId);
 
         goToMainMenu(chatId, "expense.saved", mode, name, d.amount, d.date);
     }
-
 
     private void goToMainMenu(long chatId, String keyMessage, PanelMode mode, Object... args) {
         draftService.clear(chatId, DRAFT_TYPE);
@@ -1042,6 +937,46 @@ public class ExpenseCommand implements Command {
         draftService.save(chatId, DRAFT_TYPE, d);
     }
 
+    private void saveAmount(long chatId, BigDecimal amount) {
+        ExpenseDraft d = draft(chatId);
+        d.amount = amount;
+        draftService.save(chatId, DRAFT_TYPE, d);
+    }
+
+    private void saveDate(long chatId, LocalDate date) {
+        ExpenseDraft d = draft(chatId);
+        d.date = date;
+        draftService.save(chatId, DRAFT_TYPE, d);
+    }
+
+    private void saveDocType(long chatId, DocType docType) {
+        ExpenseDraft d = draft(chatId);
+        d.docType = docType;
+        draftService.save(chatId, DRAFT_TYPE, d);
+    }
+
+    private void saveDocFileId(long chatId, String docFileId) {
+        ExpenseDraft d = draft(chatId);
+        d.docFileId = docFileId;
+        draftService.save(chatId, DRAFT_TYPE, d);
+    }
+
+    private void saveNote(long chatId, String note) {
+        ExpenseDraft d = draft(chatId);
+        d.note = note;
+        draftService.save(chatId, DRAFT_TYPE, d);
+    }
+
+    private boolean goConfirmIfNeeded(long chatId, PanelMode mode) {
+        ExpenseDraft d = draft(chatId);
+
+        if (!d.returnToConfirm) return false;
+
+        setConfirm(chatId, false);
+        showConfirmPanel(chatId, mode);
+        return true;
+    }
+
     private void setConfirm(long chatId, boolean confirm) {
         ExpenseDraft d = draft(chatId);
         d.returnToConfirm = confirm;
@@ -1054,13 +989,44 @@ public class ExpenseCommand implements Command {
         switch (st) {
             case EXPENSE_WAIT_OBJECT -> showChoseObjectPanel(chatId, mode);
             case EXPENSE_WAIT_DOC_TYPE -> showChooseDocTypePanel(chatId, mode);
-            case EXPENSE_WAIT_DOC_FILE -> showSendDocFilePanel(chatId, mode);
+            case EXPENSE_WAIT_DOC_FILE -> showAttachDocFilePanel(chatId, mode);
             case EXPENSE_WAIT_DATE -> showChooseDatePanel(chatId, mode);
-            case ADVANCE_CONFIRM -> showConfirmPanel(chatId, mode);
+            case EXPENSE_CONFIRM -> showConfirmPanel(chatId, mode);
 
             default -> { /* ничего */ }
         }
     }
+
+    private String extractFileId(Update update) {
+        if (!update.hasMessage()) return null;
+
+        var msg = update.getMessage();
+
+        if (msg.hasDocument()) {
+            return msg.getDocument().getFileId();
+        }
+
+        if (msg.hasPhoto() && msg.getPhoto() != null && !msg.getPhoto().isEmpty()) {
+            // выбираем самое “тяжёлое” фото (обычно самое большое по размеру)
+            String bestId = null;
+            int bestSize = -1;
+
+            for (var p : msg.getPhoto()) {
+                Integer sz = p.getFileSize();
+                int size = (sz != null ? sz : 0);
+                if (size > bestSize) {
+                    bestSize = size;
+                    bestId = p.getFileId();
+                }
+            }
+            return bestId;
+        }
+
+        if (msg.hasText()) return msg.getText();
+
+        return null;
+    }
+
 
     /* -------------------- menu builders -------------------- */
 

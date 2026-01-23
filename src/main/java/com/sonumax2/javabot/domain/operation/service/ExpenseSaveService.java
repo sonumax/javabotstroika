@@ -1,8 +1,8 @@
 package com.sonumax2.javabot.domain.operation.service;
 
+import com.sonumax2.javabot.domain.operation.DocType;
 import com.sonumax2.javabot.domain.operation.Operation;
 import com.sonumax2.javabot.domain.operation.OperationType;
-import com.sonumax2.javabot.domain.operation.ReceiptType;
 import com.sonumax2.javabot.domain.operation.repo.ExpenseRepository;
 import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ public class ExpenseSaveService {
                                          Long objectId,
                                          Long nomenclatureId,
                                          Long counterpartyId,
-                                         ReceiptType receiptType,
+                                         DocType docType,
                                          java.math.BigDecimal amount,
                                          java.time.LocalDate opDate,
                                          String note,
@@ -44,7 +44,7 @@ public class ExpenseSaveService {
         operationRepository.save(op);
 
         // 2) сохраняем detail (upsert)
-        ReceiptType rt = (receiptType == null ? ReceiptType.RECEIPT : receiptType);
+        DocType rt = (docType == null ? DocType.RECEIPT : docType);
 
         expenseRepository.upsertExpense(
                 op.getId(),

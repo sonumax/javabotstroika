@@ -264,8 +264,8 @@ public class KeyboardService {
 
     public InlineKeyboardMarkup backSkipInline(long chatId, String backCallback, String skipCallback) {
         InlineKeyboardRow row = row(
-                btn(chatId, "btnBack", backCallback),
-                btn(chatId, "btnSkip", skipCallback)
+                btn(chatId, "back", backCallback),
+                btn(chatId, "skip", skipCallback)
         );
         return InlineKeyboardMarkup.builder().keyboard(List.of(row)).build();
     }

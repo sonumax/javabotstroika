@@ -1,7 +1,7 @@
 package com.sonumax2.javabot.domain.operation.service;
 
+import com.sonumax2.javabot.domain.operation.DocType;
 import com.sonumax2.javabot.domain.operation.Expense;
-import com.sonumax2.javabot.domain.operation.ReceiptType;
 import com.sonumax2.javabot.domain.reference.Counterparty;
 import com.sonumax2.javabot.domain.operation.repo.ExpenseRepository;
 import com.sonumax2.javabot.domain.reference.service.CounterpartyService;
@@ -31,9 +31,9 @@ public class ExpenseService {
                               long objectId,
                               long nomenclatureId,
                               Long counterpartyId,
-                              ReceiptType receiptType) {
+                              DocType docType) {
 
-        ReceiptType rt = (receiptType == null ? ReceiptType.RECEIPT : receiptType);
+        DocType rt = (docType == null ? DocType.RECEIPT : docType);
         expenseRepo.upsertExpense(operationId, objectId, nomenclatureId, counterpartyId, rt.name());
 
         return expenseRepo.findByOperationId(operationId)

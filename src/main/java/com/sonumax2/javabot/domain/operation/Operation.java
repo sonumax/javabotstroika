@@ -83,7 +83,7 @@ public class Operation {
     public void setUpdatedBy(Long updatedBy) { this.updatedBy = updatedBy; }
 
     public boolean isCancelled() { return cancelled ; }
-    public void setCancelled(boolean cancelled) {  this.cancelled = cancelled;; }
+    public void setCancelled(boolean cancelled) {  this.cancelled = cancelled; }
 
     public LocalDateTime getCancelledAt() { return cancelledAt; }
     public void setCancelledAt(LocalDateTime cancelledAt) { this.cancelledAt = cancelledAt; }
