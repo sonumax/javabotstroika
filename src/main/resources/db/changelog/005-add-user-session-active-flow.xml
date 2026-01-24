@@ -6,12 +6,18 @@
           http://www.liquibase.org/xml/ns/dbchangelog
           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="002-add-user_state" author="max">
+    <changeSet id="005-add-user-session-active-flow" author="max">
+
         <addColumn tableName="user_session">
-            <column name="user_state" type="varchar(32)" defaultValue="IDLE">
-                <constraints nullable="false"/>
-            </column>
+            <column name="active_flow_ns" type="VARCHAR(16)"/>
+            <column name="active_draft_type" type="VARCHAR(32)"/>
         </addColumn>
+
+        <rollback>
+            <dropColumn tableName="user_session" columnName="active_flow_ns"/>
+            <dropColumn tableName="user_session" columnName="active_draft_type"/>
+        </rollback>
+
     </changeSet>
 
 </databaseChangeLog>

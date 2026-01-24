@@ -156,6 +156,31 @@ public class UserSessionService {
         setPanelMessageId(chatId, null);
     }
 
+    public String getActiveFlowNs(long chatId) {
+        return getOnCreateUserSession(chatId).getActiveFlowNs();
+    }
+
+    public String getActiveDraftType(long chatId) {
+        return getOnCreateUserSession(chatId).getActiveDraftType();
+    }
+
+    public void setActiveFlow(long chatId, String ns, String draftType) {
+        int updated = userSessionRepository.updateActiveFlow(chatId, ns, draftType);
+        if (updated > 0) return;
+
+        ensureExists(chatId);
+        userSessionRepository.updateActiveFlow(chatId, ns, draftType);
+    }
+
+    public void clearActiveFlow(long chatId) {
+        int updated = userSessionRepository.clearActiveFlow(chatId);
+        if (updated > 0) return;
+
+        ensureExists(chatId);
+        userSessionRepository.clearActiveFlow(chatId);
+    }
+
+
     private void ensureExists(long chatId) {
         userSessionRepository.findByChatId(chatId).orElseGet(() -> {
             UserSession s = new UserSession();

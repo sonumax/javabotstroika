@@ -23,4 +23,12 @@ public interface UserSessionRepository extends ListCrudRepository<UserSession, L
     @Query("UPDATE user_session SET user_state = :state WHERE chat_id = :chatId")
     int updateUserState(@Param("chatId") long chatId, @Param("state") String state);
 
+    @Modifying
+    @Query("UPDATE user_session SET active_flow_ns = :ns, active_draft_type = :draftType WHERE chat_id = :chatId")
+    int updateActiveFlow(@Param("chatId") long chatId, @Param("ns") String ns, @Param("draftType") String draftType);
+
+    @Modifying
+    @Query("UPDATE user_session SET active_flow_ns = NULL, active_draft_type = NULL WHERE chat_id = :chatId")
+    int clearActiveFlow(@Param("chatId") long chatId);
+
 }

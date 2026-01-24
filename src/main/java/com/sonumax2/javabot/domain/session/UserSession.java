@@ -14,6 +14,8 @@ public class UserSession {
     @Column("user_state") private UserState userState;
     @Column("username") private String username;
     @Column("panel_message_id") private Long panelMessageId;
+    @Column("active_flow_ns") private String activeFlowNs;
+    @Column("active_draft_type") private String activeDraftType;
 
     public UserState getUserState() {
         return userState;
@@ -32,9 +34,7 @@ public class UserSession {
     public String getLocale() {
         return locale;
     }
-    public void setLocale(String locale) {
-        this.locale = locale;
-    }
+    public void setLocale(String locale) {this.locale = locale;}
 
     public String getFirstName() {
         return firstName;
@@ -55,4 +55,11 @@ public class UserSession {
 
     public Long getPanelMessageId() { return panelMessageId; }
     public void setPanelMessageId(Long panelMessageId) { this.panelMessageId = panelMessageId; }
+
+    public String getActiveFlowNs() { return activeFlowNs; }
+    public void setActiveFlowNs(String activeFlowNs) { this.activeFlowNs = activeFlowNs; }
+
+    public String getActiveDraftType() { return activeDraftType; }
+    public void setActiveDraftType(String activeDraftType) { this.activeDraftType = activeDraftType; }
+
 }

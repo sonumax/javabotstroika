@@ -9,10 +9,7 @@ import java.time.LocalDate;
 /**
  * Черновик создания расхода (живёт в draftService).
  */
-public class ExpenseDraft {
-
-    // meta (панель/confirm-режим)
-    public boolean returnToConfirm;
+public class ExpenseDraft extends OpDraftBase {
 
     // данные операции
     public Long objectId;

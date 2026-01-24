@@ -10,5 +10,6 @@
     <include file="002-alter-user-session-user-state.xml" relativeToChangelogFile="true"/>
     <include file="003-expense-receipt-type.xml" relativeToChangelogFile="true"/>
     <include file="004-add-user-session-panel-message-id.xml" relativeToChangelogFile="true"/>
+    <include file="005-add-user-session-active-flow.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
