@@ -22,7 +22,6 @@ public class ExpenseDraft extends OpDraftBase {
     public Long counterpartyId;
     public String pendingCounterpartyName;
     public CounterpartyKind counterpartyKind;
-    public String counterpartyRawName;
 
     // common fields
     public BigDecimal amount;

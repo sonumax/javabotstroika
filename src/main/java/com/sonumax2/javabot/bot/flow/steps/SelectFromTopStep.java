@@ -72,7 +72,7 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
                 ctx.ui.panelKey(
                         ctx.chatId,
                         mode,
-                        "menu.opr",
+                        "operation.text",
                         ctx.keyboard.operationsAddMenuInline(ctx.chatId, CbParts.ADD_OPR, CbParts.MENU)
                 );
                 return StepMove.finish();

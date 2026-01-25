@@ -7,7 +7,6 @@ import com.sonumax2.javabot.bot.flow.steps.*;
 import com.sonumax2.javabot.domain.draft.DraftType;
 import com.sonumax2.javabot.domain.draft.ExpenseDraft;
 import com.sonumax2.javabot.domain.operation.DocType;
-import com.sonumax2.javabot.domain.operation.service.ExpenseSaveService;
 import com.sonumax2.javabot.domain.operation.service.ExpenseService;
 import com.sonumax2.javabot.domain.reference.BaseRefEntity;
 import com.sonumax2.javabot.domain.reference.Counterparty;
@@ -20,7 +19,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Configuration
 public class ExpenseFlowConfig {
@@ -32,10 +30,8 @@ public class ExpenseFlowConfig {
             WorkObjectService workObjectService,
             NomenclatureService nomenclatureService,
             CounterpartyService counterpartyService,
-            ExpenseService expenseService,
-            ExpenseSaveService expenseSaveService
+            ExpenseService expenseService
     ) {
-
         return new FlowDefinition<>(
                 NS,
                 DraftType.EXPENSE,
@@ -56,7 +52,7 @@ public class ExpenseFlowConfig {
                         ),
                         d -> d.objectId,
                         (d, v) -> d.objectId = v,
-                        "menu",
+                        "@opsMenu",
                         "item",
                         "obj_new"
                 ))
@@ -237,7 +233,7 @@ public class ExpenseFlowConfig {
                         ctx -> {
                             var d = ctx.d;
 
-                            expenseSaveService.saveExpense(
+                            expenseService.saveExpense(
                                     ctx.chatId,
                                     d.objectId,
                                     d.nomenclatureId,
