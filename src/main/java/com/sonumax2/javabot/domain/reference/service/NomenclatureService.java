@@ -36,6 +36,34 @@ public class NomenclatureService {
         return repo.recentCreatedByChat(chatId, limit);
     }
 
+    public List<Nomenclature> suggestByChat(long chatId, int limit) {
+        if (limit <= 0) return List.of();
+
+        List<Nomenclature> recent = recentByChat(chatId, limit);
+        List<Nomenclature> fallback = listActiveTop50();
+
+        ArrayList<Nomenclature> out = new ArrayList<>(limit);
+        Set<Long> seen = new HashSet<>();
+
+        for (Nomenclature n : recent) {
+            if (n == null || !n.isActive()) continue;
+            if (n.getId() != null && seen.add(n.getId())) {
+                out.add(n);
+                if (out.size() >= limit) return out;
+            }
+        }
+
+        for (Nomenclature n : fallback) {
+            if (n == null || !n.isActive()) continue;
+            if (n.getId() != null && seen.add(n.getId())) {
+                out.add(n);
+                if (out.size() >= limit) return out;
+            }
+        }
+
+        return out;
+    }
+
     public List<Nomenclature> search(String rawName, int limit) {
         String ui = NameNormUtils.normalizeUi(rawName);
         if (ui.isBlank()) return List.of();

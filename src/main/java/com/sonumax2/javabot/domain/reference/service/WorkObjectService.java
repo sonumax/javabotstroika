@@ -7,8 +7,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class WorkObjectService {
@@ -34,6 +33,34 @@ public class WorkObjectService {
 
     public List<WorkObject> recentByChat(long chatId, int limit) {
         return repo.recentCreatedByChat(chatId, limit);
+    }
+
+    public List<WorkObject> suggestByChat(long chatId, int limit) {
+        if (limit <= 0) return List.of();
+
+        List<WorkObject> recent = recentByChat(chatId, limit);
+        List<WorkObject> fallback = listActiveTop50();
+
+        ArrayList<WorkObject> out = new ArrayList<>(limit);
+        Set<Long> seen = new HashSet<>();
+
+        for (WorkObject wo : recent) {
+            if (wo == null || !wo.isActive()) continue;
+            if (wo.getId() != null && seen.add(wo.getId())) {
+                out.add(wo);
+                if (out.size() >= limit) return out;
+            }
+        }
+
+        for (WorkObject wo : fallback) {
+            if (wo == null || !wo.isActive()) continue;
+            if (wo.getId() != null && seen.add(wo.getId())) {
+                out.add(wo);
+                if (out.size() >= limit) return out;
+            }
+        }
+
+        return out;
     }
 
     public List<WorkObject> search(String rawName, int limit) {

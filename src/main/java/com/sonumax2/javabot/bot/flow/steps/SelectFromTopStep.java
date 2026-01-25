@@ -1,5 +1,6 @@
 package com.sonumax2.javabot.bot.flow.steps;
 
+import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.flow.FlowContext;
 import com.sonumax2.javabot.bot.flow.FlowStep;
 import com.sonumax2.javabot.bot.flow.StepMove;
@@ -14,14 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> implements FlowStep<D> {
 
     private final String id;
     private final String askKey;
 
-    private final Supplier<List<T>> topSupplier;
+    // было Supplier<List<T>>
+    private final Function<FlowContext<D>, List<T>> itemsProvider;
 
     private final Function<D, Long> getter;
     private final BiConsumer<D, Long> setter;
@@ -34,7 +35,7 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
     public SelectFromTopStep(
             String id,
             String askKey,
-            Supplier<List<T>> topSupplier,
+            Function<FlowContext<D>, List<T>> itemsProvider,
             Function<D, Long> getter,
             BiConsumer<D, Long> setter,
             String prevStepId,
@@ -43,7 +44,7 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
     ) {
         this.id = id;
         this.askKey = askKey;
-        this.topSupplier = topSupplier;
+        this.itemsProvider = itemsProvider;
         this.getter = getter;
         this.setter = setter;
         this.prevStepId = prevStepId;
@@ -65,6 +66,24 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
 
         if (FlowCb.is(data, ns, id, "back")) {
             if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+
+            // спец: вернуться в меню выбора операции
+            if ("@opsMenu".equals(prevStepId)) {
+                ctx.ui.panelKey(
+                        ctx.chatId,
+                        mode,
+                        "menu.opr",
+                        ctx.keyboard.operationsAddMenuInline(ctx.chatId, CbParts.ADD_OPR, CbParts.MENU)
+                );
+                return StepMove.finish();
+            }
+
+            // если это первый шаг, лучше отмена, чем go(null)
+            if (prevStepId == null || prevStepId.isBlank()) {
+                ctx.ui.panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard.mainMenuInline(ctx.chatId));
+                return StepMove.finish();
+            }
+
             return StepMove.go(prevStepId);
         }
 
@@ -86,7 +105,9 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
     private InlineKeyboardMarkup kb(FlowContext<D> ctx) {
         String ns = ctx.def.ns;
 
-        List<T> list = topSupplier.get();
+        List<T> list = itemsProvider.apply(ctx);
+        if (list == null) list = List.of();
+
         List<InlineKeyboardRow> rows = new ArrayList<>();
 
         // по 2 в ряд

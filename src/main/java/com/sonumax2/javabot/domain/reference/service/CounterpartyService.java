@@ -8,8 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class CounterpartyService {
@@ -44,6 +43,68 @@ public class CounterpartyService {
     public List<Counterparty> recentByChat(long chatId, int limit) {
         return repo.recentCreatedByChat(chatId, limit);
     }
+
+    public List<Counterparty> suggestByChat(long chatId, int limit) {
+        if (limit <= 0) return List.of();
+
+        List<Counterparty> recent = recentByChat(chatId, limit);
+        List<Counterparty> fallback = listActiveTop50();
+
+        ArrayList<Counterparty> out = new ArrayList<>(limit);
+        Set<Long> seen = new HashSet<>();
+
+        for (Counterparty cp : recent) {
+            if (cp == null || !cp.isActive()) continue;
+            if (cp.getId() != null && seen.add(cp.getId())) {
+                out.add(cp);
+                if (out.size() >= limit) return out;
+            }
+        }
+
+        for (Counterparty cp : fallback) {
+            if (cp == null || !cp.isActive()) continue;
+            if (cp.getId() != null && seen.add(cp.getId())) {
+                out.add(cp);
+                if (out.size() >= limit) return out;
+            }
+        }
+
+        return out;
+    }
+
+    public List<Counterparty> suggestByChat(long chatId, CounterpartyKind kind, int limit) {
+        if (limit <= 0) return List.of();
+
+        CounterpartyKind k = kindOrDefault(kind);
+
+        // recent может содержать разных kind — фильтруем
+        List<Counterparty> recent = recentByChat(chatId, Math.max(limit * 2, limit));
+        List<Counterparty> fallback = listActiveTop50(k);
+
+        ArrayList<Counterparty> out = new ArrayList<>(limit);
+        Set<Long> seen = new HashSet<>();
+
+        for (Counterparty cp : recent) {
+            if (cp == null || !cp.isActive()) continue;
+            if (cp.getKind() != k) continue;
+            if (cp.getId() != null && seen.add(cp.getId())) {
+                out.add(cp);
+                if (out.size() >= limit) return out;
+            }
+        }
+
+        for (Counterparty cp : fallback) {
+            if (cp == null || !cp.isActive()) continue;
+            if (cp.getKind() != k) continue;
+            if (cp.getId() != null && seen.add(cp.getId())) {
+                out.add(cp);
+                if (out.size() >= limit) return out;
+            }
+        }
+
+        return out;
+    }
+
 
     public List<Counterparty> search(String rawName, int limit) {
         String ui = NameNormUtils.normalizeUi(rawName);
@@ -135,6 +196,8 @@ public class CounterpartyService {
     private static CounterpartyKind kindOrDefault(CounterpartyKind kind) {
         return kind == null ? CounterpartyKind.OTHER : kind;
     }
+
+
 
 
 }

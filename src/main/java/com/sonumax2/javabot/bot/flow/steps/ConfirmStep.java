@@ -21,6 +21,7 @@ public class ConfirmStep<D extends OpDraftBase> implements FlowStep<D> {
     private final String id; // обычно "confirm"
     private final Function<FlowContext<D>, String> render; // <-- главное отличие
     private final List<EditBtn> edits;
+    private final Function<FlowContext<D>, List<EditBtn>> editsProvider;
 
     private final Consumer<FlowContext<D>> onSave;
     private final Consumer<FlowContext<D>> onCancel;
@@ -35,6 +36,19 @@ public class ConfirmStep<D extends OpDraftBase> implements FlowStep<D> {
         this.id = id;
         this.render = render;
         this.edits = edits;
+        this.onSave = onSave;
+        this.onCancel = onCancel;
+        this.editsProvider = null;
+    }
+    public ConfirmStep(String id,
+                       Function<FlowContext<D>, String> render,
+                       Function<FlowContext<D>, List<EditBtn>> editsProvider,
+                       Consumer<FlowContext<D>> onSave,
+                       Consumer<FlowContext<D>> onCancel) {
+        this.id = id;
+        this.render = render;
+        this.edits = List.of();
+        this.editsProvider = editsProvider;
         this.onSave = onSave;
         this.onCancel = onCancel;
     }
@@ -87,7 +101,9 @@ public class ConfirmStep<D extends OpDraftBase> implements FlowStep<D> {
 
         rows.add(new InlineKeyboardRow(save, cancel));
 
-        for (EditBtn e : edits) {
+        List<EditBtn> list = (editsProvider != null) ? editsProvider.apply(ctx) : edits;
+
+        for (EditBtn e : list) {
             rows.add(new InlineKeyboardRow(
                     InlineKeyboardButton.builder()
                             .text(ctx.ui.msg(ctx.chatId, e.textKey()))
@@ -95,13 +111,6 @@ public class ConfirmStep<D extends OpDraftBase> implements FlowStep<D> {
                             .build()
             ));
         }
-
-        rows.add(new InlineKeyboardRow(
-                InlineKeyboardButton.builder()
-                        .text(ctx.ui.msg(ctx.chatId, "back"))
-                        .callbackData(FlowCb.cb(ns, id, "back"))
-                        .build()
-        ));
 
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }

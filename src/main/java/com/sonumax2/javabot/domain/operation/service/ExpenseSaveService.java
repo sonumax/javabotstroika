@@ -8,6 +8,8 @@ import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -27,8 +29,8 @@ public class ExpenseSaveService {
                                          Long nomenclatureId,
                                          Long counterpartyId,
                                          DocType docType,
-                                         java.math.BigDecimal amount,
-                                         java.time.LocalDate opDate,
+                                         BigDecimal amount,
+                                         LocalDate opDate,
                                          String note,
                                          String photoFileId) {
 
@@ -39,19 +41,18 @@ public class ExpenseSaveService {
         op.setOpDate(opDate);
         op.setAmount(amount);
         op.setNote(note);
+        op.setPhotoFileId((docType == DocType.NO_RECEIPT) ? null : photoFileId);
         op.setPhotoFileId(photoFileId);
         op.setCreatedAt(LocalDateTime.now());
         operationRepository.save(op);
 
         // 2) сохраняем detail (upsert)
-        DocType rt = (docType == null ? DocType.NO_RECEIPT : docType);
-
         expenseRepository.upsertExpense(
                 op.getId(),
                 objectId,
                 nomenclatureId,
                 counterpartyId,
-                rt.name()
+                docType.name()
         );
 
         // (опционально) вернуть detail или просто id операции
