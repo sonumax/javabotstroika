@@ -65,15 +65,15 @@ public class NomenclatureService {
     }
 
     public List<Nomenclature> search(String rawName, int limit) {
-        String ui = NameNormUtils.normalizeUi(rawName);
-        if (ui.isBlank()) return List.of();
-        return repo.searchActiveByName(ui, limit);
+        String norm = NameNormUtils.normalizeNorm(rawName);
+        if (norm.isBlank()) return List.of();
+        return repo.searchActiveByName(norm, limit);
     }
 
     public List<Nomenclature> searchSimple(String raw) {
-        String ui = NameNormUtils.normalizeUi(raw);
-        if (ui.isBlank()) return List.of();
-        return repo.searchActiveByName(ui, 8);
+        String norm = NameNormUtils.normalizeNorm(raw);
+        if (norm.isBlank()) return List.of();
+        return repo.searchActiveByName(norm, 8);
     }
 
     public Optional<Nomenclature> findExact(String raw) {

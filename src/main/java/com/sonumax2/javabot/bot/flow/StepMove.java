@@ -2,6 +2,13 @@ package com.sonumax2.javabot.bot.flow;
 
 public record StepMove(Type type, String stepId) {
 
+    public StepMove {
+        if (type == Type.GOTO && (stepId == null || stepId.isBlank()))
+            throw new IllegalArgumentException("GOTO requires stepId");
+        if (type != Type.GOTO && stepId != null)
+            throw new IllegalArgumentException(type + " must have null stepId");
+    }
+
     public enum Type { UNHANDLED, STAY, GOTO, FINISH, RENDERED }
 
     public static StepMove unhandled() { return new StepMove(Type.UNHANDLED, null); }

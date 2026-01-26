@@ -50,6 +50,22 @@ public class BotMessageService {
         }
     }
 
+    public boolean tryEditTextSync(long chatId, int messageId, String text, InlineKeyboardMarkup markup) {
+        try {
+            EditMessageText.EditMessageTextBuilder b = EditMessageText.builder()
+                    .chatId(String.valueOf(chatId))
+                    .messageId(messageId)
+                    .text(text == null ? "" : text);
+
+            if (markup != null) b.replyMarkup(markup);
+
+            execute(b.build()); // синхронно, ловим ошибку
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // -------- common actions --------
 
     public void safeDelete(long chatId, int messageId) {

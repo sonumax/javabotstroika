@@ -46,9 +46,12 @@ public class BotUi {
             return replacePanelText(chatId, current, text, kb);
         }
 
-        // EDIT
-        editText(chatId, current, text, kb);
-        return current;
+        // EDIT (fallback если edit не удался)
+        boolean ok = bot.tryEditTextSync(chatId, current, text, kb);
+        if (ok) return current;
+
+        // если edit упал — создаём новое сообщение, удаляем старое, и panelMessageId обновится в sendPanelTextReturnId()
+        return replacePanelText(chatId, current, text, kb);
     }
 
     public Integer panelId(long chatId) {

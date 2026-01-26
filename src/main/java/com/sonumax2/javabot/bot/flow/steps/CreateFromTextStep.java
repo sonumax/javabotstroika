@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
-public class CreateRefFromTextStep<D extends OpDraftBase> implements FlowStep<D> {
+public class CreateFromTextStep<D extends OpDraftBase> implements FlowStep<D> {
 
     private final String id;
     private final String askKey;
@@ -24,7 +24,7 @@ public class CreateRefFromTextStep<D extends OpDraftBase> implements FlowStep<D>
     private final String prevStepId;
     private final String nextStepId;
 
-    public CreateRefFromTextStep(
+    public CreateFromTextStep(
             String id,
             String askKey,
             BiFunction<FlowContext<D>, String, Long> createId,

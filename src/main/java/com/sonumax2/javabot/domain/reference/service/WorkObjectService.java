@@ -64,9 +64,9 @@ public class WorkObjectService {
     }
 
     public List<WorkObject> search(String rawName, int limit) {
-        String ui = NameNormUtils.normalizeUi(rawName);
-        if (ui.isBlank()) return List.of();
-        return repo.searchActiveByName(ui, limit);
+        String norm = NameNormUtils.normalizeNorm(rawName);
+        if (norm.isBlank()) return List.of();
+        return repo.searchActiveByName(norm, limit);
     }
 
     public Optional<WorkObject> findExact(String raw) {

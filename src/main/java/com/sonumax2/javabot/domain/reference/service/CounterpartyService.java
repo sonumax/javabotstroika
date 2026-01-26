@@ -107,15 +107,15 @@ public class CounterpartyService {
 
 
     public List<Counterparty> search(String rawName, int limit) {
-        String ui = NameNormUtils.normalizeUi(rawName);
-        if (ui.isBlank()) return List.of();
-        return repo.searchActiveByName(ui, limit);
+        String norm = NameNormUtils.normalizeNorm(rawName);
+        if (norm.isBlank()) return List.of();
+        return repo.searchActiveByName(norm, limit);
     }
 
     public List<Counterparty> search(CounterpartyKind kind, String rawName, int limit) {
-        String ui = NameNormUtils.normalizeUi(rawName);
-        if (ui.isBlank()) return List.of();
-        return repo.searchActiveByKindAndName(kindOrDefault(kind), ui, limit);
+        String norm = NameNormUtils.normalizeNorm(rawName);
+        if (norm.isBlank()) return List.of();
+        return repo.searchActiveByKindAndName(kindOrDefault(kind), norm, limit);
     }
 
     public List<Counterparty> searchSimple(String rawName) {

@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -21,14 +22,15 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
     private final String id;
     private final String askKey;
 
-    // было Supplier<List<T>>
     private final Function<FlowContext<D>, List<T>> itemsProvider;
+    private final BiConsumer<D, String> textToAddSetter;
 
     private final Function<D, Long> getter;
     private final BiConsumer<D, Long> setter;
 
     private final String prevStepId;
     private final String nextStepId;
+    private final boolean allowSkip;
 
     private final String newTextStepId;
 
@@ -38,8 +40,10 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
             Function<FlowContext<D>, List<T>> itemsProvider,
             Function<D, Long> getter,
             BiConsumer<D, Long> setter,
+            BiConsumer<D, String> textToAddSetter,
             String prevStepId,
             String nextStepId,
+            boolean allowSkip,
             String newTextStepId
     ) {
         this.id = id;
@@ -47,8 +51,10 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
         this.itemsProvider = itemsProvider;
         this.getter = getter;
         this.setter = setter;
+        this.textToAddSetter = textToAddSetter;
         this.prevStepId = prevStepId;
         this.nextStepId = nextStepId;
+        this.allowSkip = allowSkip;
         this.newTextStepId = newTextStepId;
     }
 
@@ -99,8 +105,32 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
             return StepMove.go(nextStepId);
         }
 
+        if (FlowCb.is(data, ns, id, "skip")) {
+            setter.accept(ctx.d, null);
+
+            if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+            return StepMove.go(nextStepId);
+        }
+
         return StepMove.unhandled();
     }
+
+    @Override
+    public StepMove onText(FlowContext<D> ctx, String raw, PanelMode mode) {
+        String input = raw == null ? "" : raw.trim();
+        if (input.isBlank()) return StepMove.unhandled();
+
+        if (textToAddSetter != null) {
+            textToAddSetter.accept(ctx.d, input); // сохранили текст для следующего шага
+        }
+
+        if (newTextStepId != null && !newTextStepId.isBlank() && textToAddSetter != null) {
+            return StepMove.go(newTextStepId);
+        }
+
+        return StepMove.unhandled();
+    }
+
 
     private InlineKeyboardMarkup kb(FlowContext<D> ctx) {
         String ns = ctx.def.ns;
@@ -127,6 +157,9 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
         }
 
         rows.add(new InlineKeyboardRow(btn(ctx, "add", FlowCb.cb(ns, id, "new"))));
+        if (allowSkip) {
+            rows.add(new InlineKeyboardRow(btn(ctx, "skip", FlowCb.cb(ns, id, "skip"))));
+        }
         rows.add(new InlineKeyboardRow(btn(ctx, "back", FlowCb.cb(ns, id, "back"))));
 
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
@@ -150,4 +183,73 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
         if (s == null) return "";
         return s.length() <= 50 ? s : s.substring(0, 49) + "…";
     }
+
+    public static <D extends OpDraftBase, T extends BaseRefEntity> Builder<D, T> builder() {
+        return new Builder<>();
+    }
+
+    public static class Builder<D extends OpDraftBase, T extends BaseRefEntity> {
+        private String id;
+        private String askKey;
+
+        private Function<FlowContext<D>, List<T>> itemsProvider;
+
+        private Function<D, Long> getter;
+        private BiConsumer<D, Long> setter;
+
+        private BiConsumer<D, String> textToAddSetter;
+
+        private String prevStepId;
+        private String nextStepId;
+
+        private boolean allowSkip;
+        private String newTextStepId;
+
+        public Builder<D, T> id(String id) { this.id = id; return this; }
+        public Builder<D, T> askKey(String askKey) { this.askKey = askKey; return this; }
+
+        public Builder<D, T> options(Function<FlowContext<D>, List<T>> supplier) { this.itemsProvider = supplier; return this; }
+
+        public Builder<D, T> bind(Function<D, Long> getter, BiConsumer<D, Long> setter) {
+            this.getter = getter;
+            this.setter = setter;
+            return this;
+        }
+
+        public Builder<D, T> onTextSaveTo(BiConsumer<D, String> textToAddSetter) {
+            this.textToAddSetter = textToAddSetter;
+            return this;
+        }
+
+        public Builder<D, T> backTo(String stepId) { this.prevStepId = stepId; return this; }
+        public Builder<D, T> nextTo(String stepId) { this.nextStepId = stepId; return this; }
+
+        public Builder<D, T> allowSkip(boolean allowSkip) { this.allowSkip = allowSkip; return this; }
+
+        public Builder<D, T> textGoesTo(String newTextStepId) { this.newTextStepId = newTextStepId; return this; }
+
+        public SelectFromTopStep<D, T> build() {
+            Objects.requireNonNull(id, "id");
+            Objects.requireNonNull(askKey, "askKey");
+            Objects.requireNonNull(itemsProvider, "supplier");
+            Objects.requireNonNull(getter, "getter");
+            Objects.requireNonNull(setter, "setter");
+            Objects.requireNonNull(prevStepId, "backStepId");
+            Objects.requireNonNull(nextStepId, "nextStepId");
+
+            return new SelectFromTopStep<>(
+                    id,
+                    askKey,
+                    itemsProvider,
+                    getter,
+                    setter,
+                    textToAddSetter,
+                    prevStepId,
+                    nextStepId,
+                    allowSkip,
+                    newTextStepId
+            );
+        }
+    }
+
 }

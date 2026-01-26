@@ -54,16 +54,7 @@ public class FlowEngine {
         ui.ack(cq.getId());
 
         if (def.isStartCallback(data)) {
-            drafts.clear(chatId, def.draftType);
-            D d = drafts.get(chatId, def.draftType, def.draftClass);
-            d.step = def.startStepId;
-
-            session.setActiveFlow(chatId, def.ns, def.draftType.key());
-
-            FlowContext<D> ctx = ctx(chatId, def, d);
-            showStep(ctx, def.startStepId, PanelMode.EDIT);
-
-            drafts.save(chatId, def.draftType, d);
+            showStartStep(def, chatId);
             return;
         }
 
@@ -89,6 +80,19 @@ public class FlowEngine {
             drafts.clear(chatId, def.draftType);
             return;
         }
+
+        drafts.save(chatId, def.draftType, d);
+    }
+
+    private <D extends OpDraftBase> void showStartStep(FlowDefinition<D> def, long chatId) {
+        drafts.clear(chatId, def.draftType);
+        D d = drafts.get(chatId, def.draftType, def.draftClass);
+        d.step = def.startStepId;
+
+        session.setActiveFlow(chatId, def.ns, def.draftType.key());
+
+        FlowContext<D> ctx = ctx(chatId, def, d);
+        showStep(ctx, def.startStepId, PanelMode.EDIT);
 
         drafts.save(chatId, def.draftType, d);
     }
@@ -166,7 +170,6 @@ public class FlowEngine {
             ctx.session.setUserState(ctx.chatId, UserState.IDLE);
         }
     }
-
 
     private <D extends OpDraftBase> void showStep(FlowContext<D> ctx, String stepId, PanelMode mode) {
         ctx.session.setUserState(ctx.chatId, UserState.FLOW_WAIT_INPUT);

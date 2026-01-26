@@ -1,6 +1,5 @@
 package com.sonumax2.javabot.domain.operation.service;
 
-import com.sonumax2.javabot.domain.draft.service.DraftService;
 import com.sonumax2.javabot.domain.operation.DocType;
 import com.sonumax2.javabot.domain.operation.Expense;
 import com.sonumax2.javabot.domain.operation.Operation;
@@ -21,20 +20,18 @@ import java.util.stream.StreamSupport;
 @Service
 public class ExpenseService {
 
-    private final ExpenseRepository expenseRepo;
+    private final ExpenseRepository expenseRepository;
     private final CounterpartyService counterpartyService;
     private final OperationRepository operationRepository;
-    private final ExpenseRepository expenseRepository;
 
-    public ExpenseService(ExpenseRepository expenseRepo, CounterpartyService counterpartyService, OperationRepository operationRepository, ExpenseRepository expenseRepository) {
-        this.expenseRepo = expenseRepo;
+    public ExpenseService(ExpenseRepository expenseRepository, CounterpartyService counterpartyService, OperationRepository operationRepository) {
+        this.expenseRepository = expenseRepository;
         this.counterpartyService = counterpartyService;
         this.operationRepository = operationRepository;
-        this.expenseRepository = expenseRepository;
     }
 
     public Optional<Expense> findByOperationId(long operationId) {
-        return expenseRepo.findByOperationId(operationId);
+        return expenseRepository.findByOperationId(operationId);
     }
 
     @Transactional
@@ -45,9 +42,9 @@ public class ExpenseService {
                               DocType docType) {
 
         DocType rt = (docType == null ? DocType.NO_RECEIPT : docType);
-        expenseRepo.upsertExpense(operationId, objectId, nomenclatureId, counterpartyId, rt.name());
+        expenseRepository.upsertExpense(operationId, objectId, nomenclatureId, counterpartyId, rt.name());
 
-        return expenseRepo.findByOperationId(operationId)
+        return expenseRepository.findByOperationId(operationId)
                 .orElseThrow(() -> new IllegalStateException("Expense not saved for operationId=" + operationId));
     }
 
@@ -87,35 +84,35 @@ public class ExpenseService {
 
     @Transactional
     public Expense setCounterparty(long operationId, Long counterpartyId) {
-        Expense e = expenseRepo.findByOperationId(operationId)
+        Expense e = expenseRepository.findByOperationId(operationId)
                 .orElseThrow(() -> new IllegalStateException("Expense not found for operation_id=" + operationId));
         e.setCounterpartyId(counterpartyId);
-        return expenseRepo.save(e);
+        return expenseRepository.save(e);
     }
 
     public List<Expense> listByObject(long objectId) {
-        return expenseRepo.findByObjectId(objectId);
+        return expenseRepository.findByObjectId(objectId);
     }
 
     public List<Expense> listByNomenclature(long nomenclatureId) {
-        return expenseRepo.findByNomenclatureId(nomenclatureId);
+        return expenseRepository.findByNomenclatureId(nomenclatureId);
     }
 
     public List<Expense> listByCounterparty(long counterpartyId) {
-        return expenseRepo.findByCounterpartyId(counterpartyId);
+        return expenseRepository.findByCounterpartyId(counterpartyId);
     }
 
     public List<Long> suggestNomenclatureIds(long chatId, int limit) {
         LinkedHashSet<Long> ids = new LinkedHashSet<>();
 
-        for (Long id : expenseRepo.topNomenclatureIdsByChat(chatId, limit)) {
+        for (Long id : expenseRepository.topNomenclatureIdsByChat(chatId, limit)) {
             if (id == null) continue;
             ids.add(id);
             if (ids.size() >= limit) break;
         }
 
         if (ids.size() < limit) {
-            for (Long id : expenseRepo.topNomenclatureIdsOverall(limit)) {
+            for (Long id : expenseRepository.topNomenclatureIdsOverall(limit)) {
                 if (id == null) continue;
                 ids.add(id);
                 if (ids.size() >= limit) break;
@@ -129,14 +126,14 @@ public class ExpenseService {
     public List<Counterparty> suggestCounterparty(long chatId, long nomId, int limit) {
         LinkedHashSet<Long> ids = new LinkedHashSet<>();
 
-        for (Long id : expenseRepo.topCounterpartyIdsByChatAndNomenclature(chatId, nomId, limit)) {
+        for (Long id : expenseRepository.topCounterpartyIdsByChatAndNomenclature(chatId, nomId, limit)) {
             if (id == null) continue;
             ids.add(id);
             if (ids.size() >= limit) break;
         }
 
         if (ids.size() < limit) {
-            for (Long id : expenseRepo.topCounterpartyIdsByNomenclature(nomId, limit)) {
+            for (Long id : expenseRepository.topCounterpartyIdsByNomenclature(nomId, limit)) {
                 if (id == null) continue;
                 ids.add(id);
                 if (ids.size() >= limit) break;
@@ -144,7 +141,7 @@ public class ExpenseService {
         }
 
         if (ids.size() < limit) {
-            for (Long id : expenseRepo.topCounterpartyIdsOverall(limit)) {
+            for (Long id : expenseRepository.topCounterpartyIdsOverall(limit)) {
                 if (id == null) continue;
                 ids.add(id);
                 if (ids.size() >= limit) break;

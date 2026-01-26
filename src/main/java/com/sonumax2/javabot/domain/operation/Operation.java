@@ -27,54 +27,26 @@ public class Operation {
     @Column("exported_at") private LocalDateTime exportedAt;
     @Column("photo_file_id") private String photoFileId;
 
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getChatId() {
-        return chatId;
-    }
-    public void setChatId(Long chatId) {
-        this.chatId = chatId;
-    }
+    public Long getChatId() { return chatId; }
+    public void setChatId(Long chatId) { this.chatId = chatId; }
 
-    public OperationType getOpType() {
-        return opType;
-    }
-    public void setOpType(OperationType opType) {
-        this.opType = opType;
-    }
+    public OperationType getOpType() { return opType; }
+    public void setOpType(OperationType opType) { this.opType = opType; }
 
-    public LocalDate getOpDate() {
-        return opDate;
-    }
-    public void setOpDate(LocalDate opDate) {
-        this.opDate = opDate;
-    }
+    public LocalDate getOpDate() { return opDate; }
+    public void setOpDate(LocalDate opDate) { this.opDate = opDate; }
 
-    public BigDecimal getAmount() {
-        return amount;
-    }
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
 
-    public String getNote() {
-        return note;
-    }
-    public void setNote(String note) {
-        this.note = note;
-    }
+    public String getNote() { return note; }
+    public void setNote(String note) { this.note = note; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }

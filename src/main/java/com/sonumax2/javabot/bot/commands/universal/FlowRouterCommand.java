@@ -41,10 +41,20 @@ public class FlowRouterCommand implements Command {
         if (update.hasCallbackQuery() && update.getCallbackQuery().getData() != null) {
             String data = update.getCallbackQuery().getData();
 
-            String ns = extractNs(data);
-            if (ns != null && registry.get(ns) != null) return true;
+            // стартовые колбеки разрешаем всегда (они активируют flow)
+            if (registry.getByStartCallback(data) != null) return true;
 
-            return registry.getByStartCallback(data) != null;
+            String ns = extractNs(data);
+            if (ns == null || registry.get(ns) == null) return false;
+
+            // дальше — только если flow активен у юзера
+            if (update.getCallbackQuery().getMessage() == null) return false;
+            long chatId = update.getCallbackQuery().getMessage().getChatId();
+
+            if (session.getUserState(chatId) != UserState.FLOW_WAIT_INPUT) return false;
+
+            String activeNs = session.getActiveFlowNs(chatId);
+            return ns.equals(activeNs);
         }
 
         // 2) MESSAGES: текст/фото только когда активен flow
@@ -73,7 +83,6 @@ public class FlowRouterCommand implements Command {
         return data.substring(0, p);
     }
 
-
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void handle(Update update) {
@@ -91,11 +100,25 @@ public class FlowRouterCommand implements Command {
         if (update.hasCallbackQuery()) {
             String data = update.getCallbackQuery().getData();
 
+            FlowDefinition defStart = registry.getByStartCallback(data);
+            if (defStart != null) {
+                engine.handle(update, defStart);
+                return;
+            }
+
             String ns = extractNs(data);
             FlowDefinition def = (ns != null) ? registry.get(ns) : null;
-            if (def == null) def = registry.getByStartCallback(data);
+            if (def == null) return;
 
-            if (def != null) engine.handle(update, def);
+            if (update.getCallbackQuery().getMessage() == null) return;
+            long chatId = update.getCallbackQuery().getMessage().getChatId();
+
+            if (session.getUserState(chatId) != UserState.FLOW_WAIT_INPUT) return;
+
+            String activeNs = session.getActiveFlowNs(chatId);
+            if (!ns.equals(activeNs)) return;
+
+            engine.handle(update, def);
             return;
         }
 
@@ -107,7 +130,6 @@ public class FlowRouterCommand implements Command {
 
         engine.handle(update, def);
     }
-
 
     @Override
     public String getCommand() {

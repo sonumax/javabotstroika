@@ -51,7 +51,11 @@ public class FlowDefinition<D extends OpDraftBase> {
     }
 
     public FlowDefinition<D> addStep(FlowStep<D> step) {
-        steps.put(step.id(), step);
+        String stepId = step.id();
+        FlowStep<D> prev = steps.putIfAbsent(stepId, step);
+        if (prev != null) {
+            throw new IllegalStateException("Duplicate step id: '" + stepId + "' in flow ns='" + ns + "'");
+        }
         return this;
     }
 

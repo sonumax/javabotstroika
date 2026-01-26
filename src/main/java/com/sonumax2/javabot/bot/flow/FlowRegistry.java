@@ -31,7 +31,6 @@ public class FlowRegistry {
         return byStartCb.get(cb);
     }
 
-
     public FlowDefinition<?> getByCommand(String cmdText) {
         if (cmdText == null) return null;
 
@@ -44,7 +43,6 @@ public class FlowRegistry {
 
         return byCommand.get(t);
     }
-
 
     public FlowDefinition<?> get(String ns) {
         return byNs.get(ns);

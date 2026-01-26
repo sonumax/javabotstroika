@@ -70,6 +70,7 @@ public class FileInputStep<D extends OpDraftBase> implements FlowStep<D> {
         }
 
         if (allowSkip && FlowCb.is(data, ns, id, "skip")) {
+            setter.accept(ctx.d, null);
             if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
             return StepMove.go(nextStepId);
         }

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="006-1-enable-pgtrgm" author="max">
+        <sql dbms="postgresql">create extension if not exists pg_trgm;</sql>
+    </changeSet>
+
+    <changeSet id="006-2-ref-name-norm-trgm-indexes" author="max">
+        <sql dbms="postgresql">
+            create index if not exists idx_work_object_name_norm_trgm
+            on work_object using gin (name_norm gin_trgm_ops);
+
+            create index if not exists idx_nomenclature_name_norm_trgm
+            on nomenclature using gin (name_norm gin_trgm_ops);
+
+            create index if not exists idx_counterparty_name_norm_trgm
+            on counterparty using gin (name_norm gin_trgm_ops);
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

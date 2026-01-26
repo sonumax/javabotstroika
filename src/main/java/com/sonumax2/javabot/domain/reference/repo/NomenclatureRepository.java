@@ -27,7 +27,7 @@ public interface NomenclatureRepository extends ListCrudRepository<Nomenclature,
         select *
         from nomenclature
         where is_active = true
-          and lower(name) like lower(concat('%', :q, '%'))
+          and name_norm like concat('%', :q, '%')
         order by name asc
         limit :limit
     """)

@@ -52,17 +52,24 @@ public class ExpenseFlowConfig {
                         ),
                         d -> d.objectId,
                         (d, v) -> d.objectId = v,
+                        (d, txt) -> d.pendingObjectName = txt,
                         "@opsMenu",
                         "item",
-                        "obj_new"
+                        false,
+                        "obj_search"
                 ))
-                .addStep(new CreateRefFromTextStep<>(
-                        "obj_new",
-                        "object.askName",
+                .addStep(new SearchPickOrCreateRefStep<>(
+                        "obj_search",
+                        "object.search.title",
+                        d -> d.pendingObjectName,
+                        (d, v) -> d.pendingObjectName = v,
+                        (d, v) -> d.objectId = v,
+                        (ctx, text) -> workObjectService.findExact(text),
+                        (ctx, text, lim) -> workObjectService.search(text, lim),
                         (ctx, text) -> workObjectService.getOrCreate(text, ctx.chatId).getId(),
-                        (d, id) -> d.objectId = id,
                         "obj",
-                        "item"
+                        "item",
+                        8
                 ))
 
                 // -------- NOMENCLATURE --------
@@ -87,16 +94,17 @@ public class ExpenseFlowConfig {
                         },
                         d -> d.nomenclatureId,
                         (d, v) -> d.nomenclatureId = v,
+                        (d, txt) -> d.pendingNomenclatureName = txt,
                         "obj",
                         "cp",
+                        false,
                         "item_search"
                 ))
                 .addStep(new SearchPickOrCreateRefStep<>(
                         "item_search",
-                        "nomenclature.askNew",
+                        "nomenclature.search.title",
                         d -> d.pendingNomenclatureName,
                         (d, v) -> d.pendingNomenclatureName = v,
-                        d -> d.nomenclatureId,
                         (d, v) -> d.nomenclatureId = v,
                         (ctx, text) -> nomenclatureService.findExact(text),
                         (ctx, text, lim) -> nomenclatureService.search(text, lim),
@@ -105,57 +113,45 @@ public class ExpenseFlowConfig {
                         "cp",
                         8
                 ))
-                .addStep(new CreateRefFromTextStep<>(
-                        "item_new",
-                        "nomenclature.askNew",
-                        (ctx, text) -> nomenclatureService.getOrCreate(text, ctx.chatId).getId(),
-                        (d, id) -> d.nomenclatureId = id,
-                        "item",
-                        "cp"
-                ))
 
                 // -------- COUNTERPARTY --------
-                .addStep(new SelectFromTopStep<>(
-                        "cp",
-                        "counterparty.choseOrCreate",
-                        ctx -> {
-                            if (ctx.d.nomenclatureId != null) {
-                                return expenseService.suggestCounterparty(ctx.chatId, ctx.d.nomenclatureId, 8);
-                            }
-                            return mergeById(
-                                    counterpartyService.recentByChat(ctx.chatId, 8),
-                                    counterpartyService.listActiveTop50(),
-                                    8
-                            );
-                        },
-                        d -> d.counterpartyId,
-                        (d, v) -> d.counterpartyId = v,
-                        "item",
-                        "amount",
-                        "cp_search"
-                ))
-                .addStep(new SearchPickOrCreateRefStep<>(
-                        "cp_search",
-                        "counterparty.askNew",
-                        d -> d.pendingCounterpartyName,
-                        (d, v) -> d.pendingCounterpartyName = v,
-                        d -> d.counterpartyId,
-                        (d, v) -> d.counterpartyId = v,
-                        (ctx, text) -> counterpartyService.findExact(ctx.d.counterpartyKind, text),
-                        (ctx, text, lim) -> counterpartyService.search(ctx.d.counterpartyKind, text, lim),
-                        (ctx, text) -> counterpartyService.getOrCreate(text, ctx.d.counterpartyKind, ctx.chatId).getId(),
-                        "cp",
-                        "amount",
-                        8
-                ))
-                .addStep(new CreateRefFromTextStep<>(
-                        "cp_new",
-                        "counterparty.askNew",
-                        (ctx, text) -> counterpartyService.getOrCreate(text, ctx.d.counterpartyKind, ctx.chatId).getId(),
-                        (d, id) -> d.counterpartyId = id,
-                        "cp",
-                        "amount"
-                ))
+                .addStep(
+                        SelectFromTopStep.<ExpenseDraft, Counterparty>builder()
+                                .id("cp")
+                                .askKey("counterparty.search.title")
+                                .options(ctx -> {
+                                    if (ctx.d.nomenclatureId != null) {
+                                        return expenseService.suggestCounterparty(ctx.chatId, ctx.d.nomenclatureId, 8);
+                                    }
+                                    return mergeById(
+                                            counterpartyService.recentByChat(ctx.chatId, 8),
+                                            counterpartyService.listActiveTop50(),
+                                            8
+                                    );
+                                })
+                                .bind(d -> d.counterpartyId, (d, v) -> d.counterpartyId = v)
+                                .onTextSaveTo((d, txt) -> d.pendingCounterpartyName = txt)
+                                .backTo("item")
+                                .nextTo("amount")
+                                .allowSkip(true)
+                                .textGoesTo("cp_search")
+                                .build()
+                )
+                .addStep(
+                        SearchPickOrCreateRefStep.<ExpenseDraft, Counterparty>builder()
+                                .id("cp_search")
+                                .askKey("counterparty.search.title")
+                                .pending(d -> d.pendingCounterpartyName, (d, v) -> d.pendingCounterpartyName = v)
+                                .saveIdTo((d, v) -> d.counterpartyId = v)
+                                .exact((ctx, text) -> counterpartyService.findExact(ctx.d.counterpartyKind, text))
+                                .search((ctx, text, lim) -> counterpartyService.search(ctx.d.counterpartyKind, text, lim))
+                                .create((ctx, text) -> counterpartyService.getOrCreate(text, ctx.d.counterpartyKind, ctx.chatId).getId())
+                                .backTo("cp")
+                                .nextTo("amount")
+                                .limit(8)
+                                .build()
+                )
+
 
                 // -------- AMOUNT / DATE --------
                 .addStep(new AmountInputStep<>(

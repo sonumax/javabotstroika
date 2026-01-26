@@ -40,7 +40,7 @@ public interface CounterpartyRepository extends ListCrudRepository<Counterparty,
         select *
         from counterparty
         where is_active = true
-          and lower(name) like lower(concat('%', :q, '%'))
+          and name_norm like concat('%', :q, '%')
         order by name asc
         limit :limit
     """)
@@ -51,7 +51,7 @@ public interface CounterpartyRepository extends ListCrudRepository<Counterparty,
         from counterparty
         where is_active = true
           and kind = :kind
-          and lower(name) like lower(concat('%', :q, '%'))
+          and name_norm like concat('%', :q, '%')
         order by name asc
         limit :limit
     """)

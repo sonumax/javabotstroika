@@ -96,7 +96,6 @@ public class AdvanceFlowConfig {
                             op.setAmount(d.amount);
                             op.setNote(d.note);
                             op.setCreatedAt(LocalDateTime.now());
-                            op.setUpdatedAt(LocalDateTime.now());
 
                             operationRepository.save(op);
 

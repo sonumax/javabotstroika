@@ -129,4 +129,52 @@ public final class InputParseUtils {
             return null;
         }
     }
+
+    public static BigDecimal parseDecimal(String raw) {
+        if (raw == null) return null;
+
+        String s = raw.trim();
+        if (s.isEmpty()) return null;
+
+        // убираем пробелы и nbsp
+        s = s.replace("\u00A0", "").replace(" ", "");
+
+        // если встречаются и ',' и '.', пытаемся понять где десятичный
+        int lastComma = s.lastIndexOf(',');
+        int lastDot = s.lastIndexOf('.');
+        if (lastComma != -1 && lastDot != -1) {
+            if (lastComma > lastDot) {
+                // 1.234,56 -> 1234.56
+                s = s.replace(".", "").replace(",", ".");
+            } else {
+                // 1,234.56 -> 1234.56
+                s = s.replace(",", "");
+            }
+        } else {
+            // обычный случай: 12,5 -> 12.5
+            s = s.replace(",", ".");
+        }
+
+        // оставляем цифры, точку, минус
+        s = s.replaceAll("[^0-9.\\-]", "");
+        if (s.isBlank()) return null;
+
+        // минус только в начале
+        s = s.replaceAll("(?<!^)-", "");
+
+        // если много точек — считаем, что последняя десятичная, остальные тысячные
+        int last = s.lastIndexOf('.');
+        if (last != -1) {
+            String intPart = s.substring(0, last).replace(".", "");
+            String fracPart = s.substring(last + 1);
+            s = intPart + "." + fracPart;
+        }
+
+        try {
+            return new BigDecimal(s);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 }

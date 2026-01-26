@@ -5,13 +5,15 @@ import com.sonumax2.javabot.domain.reference.CounterpartyKind;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Черновик создания расхода (живёт в draftService).
  */
 public class ExpenseDraft extends OpDraftBase {
 
-    // данные операции
+    public String pendingObjectName;
     public Long objectId;
 
     // nomenclature
