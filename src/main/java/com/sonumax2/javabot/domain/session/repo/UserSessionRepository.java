@@ -31,4 +31,8 @@ public interface UserSessionRepository extends ListCrudRepository<UserSession, L
     @Query("UPDATE user_session SET active_flow_ns = NULL, active_draft_type = NULL WHERE chat_id = :chatId")
     int clearActiveFlow(@Param("chatId") long chatId);
 
+    @Modifying
+    @Query("UPDATE user_session SET timezone = :timezone WHERE chat_id = :chatId")
+    int updateTimezone(@Param("chatId") long chatId, @Param("timezone") String timezone);
+
 }

@@ -57,7 +57,7 @@ public class DateInputStep<D extends OpDraftBase> implements FlowStep<D> {
     @Override
     public StepMove onCallback(FlowContext<D> ctx, String data, PanelMode mode) {
         String ns = ctx.def.ns;
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ctx.session.getZoneId(ctx.chatId));
 
         if (FlowCb.is(data, ns, id, "back")) {
             return onBack(ctx, mode);
@@ -88,7 +88,7 @@ public class DateInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     @Override
     public StepMove onText(FlowContext<D> ctx, String raw, PanelMode mode) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ctx.session.getZoneId(ctx.chatId));
         DateParseResult res = InputParseUtils.parseSmartDate(raw, today);
 
         if (res.error != DateParseResult.Error.NONE) {

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
+import java.time.ZoneId;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Objects;
@@ -26,6 +27,7 @@ public class UserSessionService {
             newSession.setChatId(chatId);
             newSession.setUserState(UserState.IDLE);
             newSession.setLocale("ru");
+            newSession.setTimezone("Europe/Minsk");
             return userSessionRepository.save(newSession);
         });
     }
@@ -180,15 +182,22 @@ public class UserSessionService {
         userSessionRepository.clearActiveFlow(chatId);
     }
 
-
     private void ensureExists(long chatId) {
         userSessionRepository.findByChatId(chatId).orElseGet(() -> {
             UserSession s = new UserSession();
             s.setChatId(chatId);
             s.setUserState(UserState.IDLE);
             s.setLocale("ru");
+            s.setTimezone("Europe/Minsk");
             return userSessionRepository.save(s);
         });
+    }
+
+    public ZoneId getZoneId(long chatId) {
+        String tz = getOnCreateUserSession(chatId).getTimezone();
+        if (tz == null || tz.isBlank()) return ZoneId.of("Europe/Minsk");
+        try { return ZoneId.of(tz); }
+        catch (Exception e) { return ZoneId.of("Europe/Minsk"); }
     }
 
     private String safe(String s) { return s == null ? "" : s.trim(); }

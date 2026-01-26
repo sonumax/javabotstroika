@@ -12,5 +12,6 @@
     <include file="004-add-user-session-panel-message-id.xml" relativeToChangelogFile="true"/>
     <include file="005-add-user-session-active-flow.xml" relativeToChangelogFile="true"/>
     <include file="006-ref-search-trgm-indexes.xml" relativeToChangelogFile="true"/>
+    <include file="007-add-user-session-timezone.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

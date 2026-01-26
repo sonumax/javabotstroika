@@ -16,6 +16,7 @@ public class UserSession {
     @Column("panel_message_id") private Long panelMessageId;
     @Column("active_flow_ns") private String activeFlowNs;
     @Column("active_draft_type") private String activeDraftType;
+    @Column("timezone") private String timezone;
 
     public UserState getUserState() {
         return userState;
@@ -62,4 +63,6 @@ public class UserSession {
     public String getActiveDraftType() { return activeDraftType; }
     public void setActiveDraftType(String activeDraftType) { this.activeDraftType = activeDraftType; }
 
+    public String getTimezone() { return timezone; }
+    public void setTimezone(String timezone) { this.timezone = timezone; }
 }
