@@ -2,6 +2,7 @@ package com.sonumax2.javabot.bot.flow.steps;
 
 import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.flow.FlowContext;
+import com.sonumax2.javabot.bot.flow.FlowDefinition;
 import com.sonumax2.javabot.bot.flow.FlowStep;
 import com.sonumax2.javabot.bot.flow.StepMove;
 import com.sonumax2.javabot.bot.ui.PanelMode;
@@ -71,7 +72,7 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
         String ns = ctx.def.ns;
 
         if (FlowCb.is(data, ns, id, "back")) {
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
 
             // спец: вернуться в меню выбора операции
             if ("@opsMenu".equals(prevStepId)) {
@@ -101,14 +102,14 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
             long picked = FlowCb.tailLong(data, ns, id, "pick");
             setter.accept(ctx.d, picked);
 
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
             return StepMove.go(nextStepId);
         }
 
         if (FlowCb.is(data, ns, id, "skip")) {
             setter.accept(ctx.d, null);
 
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
             return StepMove.go(nextStepId);
         }
 

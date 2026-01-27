@@ -7,6 +7,8 @@ import java.util.*;
 
 public class FlowDefinition<D extends OpDraftBase> {
 
+    public static final String STEP_CONFIRM = "confirm";
+
     public final String ns;
     public final DraftType draftType;
     public final Class<D> draftClass;

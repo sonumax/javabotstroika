@@ -1,6 +1,7 @@
 package com.sonumax2.javabot.bot.flow.steps;
 
 import com.sonumax2.javabot.bot.flow.FlowContext;
+import com.sonumax2.javabot.bot.flow.FlowDefinition;
 import com.sonumax2.javabot.bot.flow.FlowStep;
 import com.sonumax2.javabot.bot.flow.StepMove;
 import com.sonumax2.javabot.bot.ui.PanelMode;
@@ -101,7 +102,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
             idSetter.accept(ctx.d, exact.get().getId());
             pendingSetter.accept(ctx.d, null);
 
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
             return StepMove.go(nextStepId);
         }
 
@@ -119,7 +120,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
         if (FlowCb.is(data, ns, id, "back")) {
             // важно: чистим pending, иначе при следующем заходе будет “старый поиск”
             pendingSetter.accept(ctx.d, null);
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
             return StepMove.go(backStepId);
         }
 
@@ -128,7 +129,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
             idSetter.accept(ctx.d, picked);
             pendingSetter.accept(ctx.d, null);
 
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
             return StepMove.go(nextStepId);
         }
 
@@ -143,7 +144,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
             idSetter.accept(ctx.d, newId);
             pendingSetter.accept(ctx.d, null);
 
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
             return StepMove.go(nextStepId);
         }
 

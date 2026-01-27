@@ -61,14 +61,14 @@ public class AdvanceFlowConfig {
                         d -> d.note,
                         (d, v) -> d.note = v,
                         "amount",
-                        "confirm",
+                        FlowDefinition.STEP_CONFIRM,
                         true,
-                        "confirm",
+                        FlowDefinition.STEP_CONFIRM,
                         s -> null
                 ))
 
                 .addStep(new ConfirmStep<>(
-                        "confirm",
+                        FlowDefinition.STEP_CONFIRM,
                         ctx -> {
                             var d = ctx.d;
                             String note = (d.note == null || d.note.isBlank())

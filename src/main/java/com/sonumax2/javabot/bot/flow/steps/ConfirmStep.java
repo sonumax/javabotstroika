@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -18,8 +19,8 @@ public class ConfirmStep<D extends OpDraftBase> implements FlowStep<D> {
 
     public record EditBtn(String textKey, String stepId) {}
 
-    private final String id; // обычно "confirm"
-    private final Function<FlowContext<D>, String> render; // <-- главное отличие
+    private final String id;
+    private final Function<FlowContext<D>, String> render;
     private final List<EditBtn> edits;
     private final Function<FlowContext<D>, List<EditBtn>> editsProvider;
 
@@ -103,15 +104,66 @@ public class ConfirmStep<D extends OpDraftBase> implements FlowStep<D> {
 
         List<EditBtn> list = (editsProvider != null) ? editsProvider.apply(ctx) : edits;
 
+        List<InlineKeyboardButton> buf = new ArrayList<>(2);
+
         for (EditBtn e : list) {
-            rows.add(new InlineKeyboardRow(
-                    InlineKeyboardButton.builder()
-                            .text(ctx.ui.msg(ctx.chatId, e.textKey()))
-                            .callbackData(FlowCb.cb(ns, id, "edit", e.stepId()))
-                            .build()
-            ));
+            InlineKeyboardButton btn = InlineKeyboardButton.builder()
+                    .text(ctx.ui.msg(ctx.chatId, e.textKey()))
+                    .callbackData(FlowCb.cb(ns, id, "edit", e.stepId()))
+                    .build();
+
+            buf.add(btn);
+
+            if (buf.size() == 2) {
+                rows.add(new InlineKeyboardRow(buf.get(0), buf.get(1)));
+                buf.clear();
+            }
+        }
+
+        if (!buf.isEmpty()) {
+            rows.add(new InlineKeyboardRow(buf.get(0)));
         }
 
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
+    public static <D extends OpDraftBase> ConfirmStep.Builder<D> builder() {
+        return new Builder<>();
+    }
+
+    public static class Builder<D extends OpDraftBase> {
+        private String id;
+        private Function<FlowContext<D>, String> render;
+        private List<EditBtn> edits;
+        private Function<FlowContext<D>, List<EditBtn>> editsProvider;
+        private Consumer<FlowContext<D>> onSave;
+        private Consumer<FlowContext<D>> onCancel;
+
+        public Builder<D> id(String id) { this.id = id; return this; }
+        public Builder<D> render(Function<FlowContext<D>, String> render) { this.render = render; return this; }
+
+        public Builder<D> edits(List<EditBtn> edits) { this.edits = edits; return this; }
+        public Builder<D> editsProvider(Function<FlowContext<D>, List<EditBtn>> editsProvider) { this.editsProvider = editsProvider; return this; }
+
+        public Builder<D> allowSave(Consumer<FlowContext<D>> onSave) { this.onSave = onSave; return this; }
+        public Builder<D> allowCancel(Consumer<FlowContext<D>> onCancel) { this.onCancel = onCancel; return this; }
+
+        public ConfirmStep<D> build() {
+            Objects.requireNonNull(id, "id");
+            Objects.requireNonNull(render, "render");
+            Objects.requireNonNull(onSave, "onSave");
+            Objects.requireNonNull(onCancel, "onCancel");
+
+            if (edits != null && editsProvider != null) {
+                throw new IllegalStateException("Provide either edits or editsProvider, not both");
+            }
+
+            if (editsProvider != null) {
+                return new ConfirmStep<>(id, render, editsProvider, onSave, onCancel);
+            }
+
+            Objects.requireNonNull(edits, "edits");
+            return new ConfirmStep<>(id, render, edits, onSave, onCancel);
+        }
     }
 }

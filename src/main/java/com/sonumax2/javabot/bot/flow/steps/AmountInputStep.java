@@ -1,6 +1,7 @@
 package com.sonumax2.javabot.bot.flow.steps;
 
 import com.sonumax2.javabot.bot.flow.FlowContext;
+import com.sonumax2.javabot.bot.flow.FlowDefinition;
 import com.sonumax2.javabot.bot.flow.FlowStep;
 import com.sonumax2.javabot.bot.flow.StepMove;
 import com.sonumax2.javabot.bot.ui.PanelMode;
@@ -56,7 +57,7 @@ public class AmountInputStep<D extends OpDraftBase> implements FlowStep<D> {
         String ns = ctx.def.ns;
 
         if (FlowCb.is(data, ns, id, "back")) {
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
             return StepMove.go(prevStepId);
         }
 
@@ -74,7 +75,7 @@ public class AmountInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
         setter.accept(ctx.d, amount);
 
-        if (ctx.d.consumeReturnToConfirm()) return StepMove.go("confirm");
+        if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
         return StepMove.go(nextStepId);
     }
 
