@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="012-add-receipt-type" author="max">
+
+        <addColumn tableName="syp_detail">
+            <column name="receipt_type" type="VARCHAR(16)" defaultValue="NO_RECEIPT">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="fuel_detail">
+            <column name="receipt_type" type="VARCHAR(16)" defaultValue="NO_RECEIPT">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <createIndex tableName="syp_detail" indexName="ix_syp_detail_receipt_type">
+            <column name="receipt_type"/>
+        </createIndex>
+
+        <createIndex tableName="fuel_detail" indexName="ix_fuel_detail_receipt_type">
+            <column name="receipt_type"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
