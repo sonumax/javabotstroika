@@ -34,12 +34,12 @@ public class EquipmentService {
         return repo.findByChatIdAndNameNorm(chatId, nameNorm)
                 .orElseGet(() -> {
                     Equipment e = new Equipment();
-                    e.chatId = chatId;
-                    e.name = name;
-                    e.nameNorm = nameNorm;
-                    e.isActive = true;
-                    e.createdAt = LocalDateTime.now();
-                    e.updatedAt = LocalDateTime.now();
+                    e.setChatId(chatId);
+                    e.setName(name);
+                    e.setNameNorm(nameNorm);
+                    e.setActive(true);
+                    e.setCreatedAt(LocalDateTime.now());
+                    e.setUpdatedAt(LocalDateTime.now()); //TODO timezon
                     return repo.save(e);
                 });
     }

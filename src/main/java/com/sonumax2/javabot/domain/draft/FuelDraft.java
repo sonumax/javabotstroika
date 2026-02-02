@@ -31,8 +31,4 @@ public class FuelDraft extends OpDraftBase {
     // Telegram file_id (если фото одно)
     public String docFileId;
     public DocType docType = DocType.NO_RECEIPT;
-
-    public enum FuelKind {
-        TRANSPORT, MACHINE
-    }
 }

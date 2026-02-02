@@ -1,5 +1,6 @@
 package com.sonumax2.javabot.domain.operation;
 
+import com.sonumax2.javabot.domain.draft.FuelKind;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 import org.springframework.data.annotation.Id;
@@ -11,7 +12,7 @@ public class FuelDetail {
 
     @Id
     @Column("operation_id") private Long operationId;
-    @Column("fuel_kind") private String fuelKind; // "TRANSPORT" / "MACHINE"
+    @Column("fuel_kind") private FuelKind fuelKind; // "TRANSPORT" / "MACHINE"
     @Column("equipment_id") private Long equipmentId;
     @Column("counterparty_id") private Long counterpartyId;
     @Column("volume") private BigDecimal volume;
@@ -20,8 +21,8 @@ public class FuelDetail {
     public Long getOperationId() { return operationId; }
     public void setOperationId(Long operationId) { this.operationId = operationId; }
 
-    public String getFuelKind() { return fuelKind; }
-    public void setFuelKind(String fuelKind) { this.fuelKind = fuelKind; }
+    public FuelKind getFuelKind() { return fuelKind; }
+    public void setFuelKind(FuelKind fuelKind) { this.fuelKind = fuelKind; }
 
     public Long getEquipmentId() { return equipmentId; }
     public void setEquipmentId(Long equipmentId) { this.equipmentId = equipmentId; }

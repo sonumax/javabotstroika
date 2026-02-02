@@ -13,7 +13,7 @@ public class SypDetail {
     @Column("work_object_id") private Long workObjectId;
     @Column("counterparty_id") private Long counterpartyId;
 
-    @Column("pay_type") private String payType; // "CASH" / "CASHLESS"
+    @Column("pay_type") private PayType payType; // "CASH" / "CASHLESS"
     @Column("receipt_type") private DocType docType = DocType.NO_RECEIPT;
 
     public Long getOperationId() { return operationId; }
@@ -25,8 +25,8 @@ public class SypDetail {
     public Long getCounterpartyId() { return counterpartyId; }
     public void setCounterpartyId(Long counterpartyId) { this.counterpartyId = counterpartyId; }
 
-    public String getPayType() { return payType; }
-    public void setPayType(String payType) { this.payType = payType; }
+    public PayType getPayType() { return payType; }
+    public void setPayType(PayType payType) { this.payType = payType; }
 
     public DocType getDocType() { return docType; }
     public void setDocType(DocType docType) { this.docType = docType; }
