@@ -77,22 +77,9 @@ public class FlowEngine {
         applyMoveAndMaybeShow(ctx, mv, PanelMode.EDIT);
 
         if (mv != null && mv.type() == StepMove.Type.FINISH) {
-            drafts.clear(chatId, def.draftType);
+            finishFlow(chatId, def);
             return;
         }
-
-        drafts.save(chatId, def.draftType, d);
-    }
-
-    private <D extends OpDraftBase> void showStartStep(FlowDefinition<D> def, long chatId) {
-        drafts.clear(chatId, def.draftType);
-        D d = drafts.get(chatId, def.draftType, def.draftClass);
-        d.step = def.startStepId;
-
-        session.setActiveFlow(chatId, def.ns, def.draftType.key());
-
-        FlowContext<D> ctx = ctx(chatId, def, d);
-        showStep(ctx, def.startStepId, PanelMode.EDIT);
 
         drafts.save(chatId, def.draftType, d);
     }
@@ -114,7 +101,7 @@ public class FlowEngine {
         applyMoveAndMaybeShow(ctx, mv, PanelMode.MOVE_DOWN);
 
         if (mv != null && mv.type() == StepMove.Type.FINISH) {
-            drafts.clear(chatId, def.draftType);
+            finishFlow(chatId, def);
             return;
         }
 
@@ -135,11 +122,44 @@ public class FlowEngine {
         applyMoveAndMaybeShow(ctx, mv, PanelMode.MOVE_DOWN);
 
         if (mv != null && mv.type() == StepMove.Type.FINISH) {
-            drafts.clear(chatId, def.draftType);
+            finishFlow(chatId, def);
             return;
         }
 
         drafts.save(chatId, def.draftType, d);
+    }
+
+    private <D extends OpDraftBase> void showStartStep(FlowDefinition<D> def, long chatId) {
+        drafts.clear(chatId, def.draftType);
+        D d = drafts.get(chatId, def.draftType, def.draftClass);
+        d.step = def.startStepId;
+
+        session.setActiveFlow(chatId, def.ns, def.draftType.key());
+
+        FlowContext<D> ctx = ctx(chatId, def, d);
+        showStep(ctx, def.startStepId, PanelMode.EDIT);
+
+        drafts.save(chatId, def.draftType, d);
+    }
+
+    private <D extends OpDraftBase> void finishFlow(long chatId, FlowDefinition<D> def) {
+        // 1) попытка удалить draft
+        try {
+            drafts.clear(chatId, def.draftType);
+        } catch (Exception e) {
+            // если удалить не удалось — хотя бы "обнулить шаг", чтобы не продолжить с середины
+            try {
+                D d = drafts.get(chatId, def.draftType, def.draftClass);
+                d.step = null;
+                drafts.save(chatId, def.draftType, d);
+            } catch (Exception ignore) {
+                // тут уже ничего не сделаешь, но хотя бы не ломаем пользователю чат
+            }
+        }
+
+        // 2) очистка сессии всегда
+        session.clearActiveFlow(chatId);
+        session.setUserState(chatId, UserState.IDLE);
     }
 
     private <D extends OpDraftBase> void applyMoveAndMaybeShow(FlowContext<D> ctx, StepMove mv, PanelMode mode) {
@@ -166,8 +186,7 @@ public class FlowEngine {
 
         if (mv.type() == StepMove.Type.FINISH) {
             ctx.d.step = null;
-            ctx.session.clearActiveFlow(ctx.chatId);
-            ctx.session.setUserState(ctx.chatId, UserState.IDLE);
+            return;
         }
     }
 
@@ -226,14 +245,4 @@ public class FlowEngine {
 
         drafts.save(chatId, def.draftType, d);
     }
-
-    private <D extends OpDraftBase> boolean finishStep(long chatId, StepMove mv, FlowDefinition<D> def) {
-        if (mv != null && mv.type() == StepMove.Type.FINISH) {
-            drafts.clear(chatId, def.draftType);
-            session.clearActiveFlow(chatId);
-            return true;
-        }
-        return false;
-    }
-
 }

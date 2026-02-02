@@ -27,7 +27,7 @@ public class DraftService {
 
     public <T> Optional<T> find(Long chatId, String draftType, Class<T> type) {
         return repo.findByChatIdAndDraftType(chatId, draftType)
-                .flatMap(d -> safeRead(d.getDataJson(), type));
+                .flatMap(d -> safeReadOrClear(chatId, draftType, d.getDataJson(), type));
     }
 
     /** get-or-create */
@@ -42,7 +42,11 @@ public class DraftService {
                     return d;
                 });
 
-        return safeRead(entity.getDataJson(), type).orElseGet(() -> newInstance(type));
+        // если битый JSON — удаляем draft и начинаем заново
+        return safeReadOrClear(chatId, draftType, entity.getDataJson(), type)
+                .orElseGet(() -> {
+                    return newInstance(type);
+                });
     }
 
     public <T> void save(Long chatId, String draftType, T draft) {
@@ -81,11 +85,17 @@ public class DraftService {
 
     /* ---------- helpers ---------- */
 
-    private <T> Optional<T> safeRead(String json, Class<T> type) {
+    private <T> Optional<T> safeReadOrClear(Long chatId, String draftType, String json, Class<T> type) {
         try {
             return Optional.ofNullable(objectMapper.readValue(json, type));
         } catch (Exception e) {
-            log.warn("Failed to read draft json for type={}", type.getName(), e);
+            log.warn("Draft json corrupted. Clearing draft. chatId={}, draftType={}, class={}",
+                    chatId, draftType, type.getName(), e);
+            try {
+                repo.deleteByChatIdAndDraftType(chatId, draftType);
+            } catch (Exception delEx) {
+                log.warn("Failed to delete corrupted draft. chatId={}, draftType={}", chatId, draftType, delEx);
+            }
             return Optional.empty();
         }
     }
