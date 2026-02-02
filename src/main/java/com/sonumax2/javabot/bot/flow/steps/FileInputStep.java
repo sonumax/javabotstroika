@@ -62,7 +62,7 @@ public class FileInputStep<D extends OpDraftBase> implements FlowStep<D> {
             if (m != null) return m;
             
             if (prevStepId == null || prevStepId.isBlank()) {
-                ctx.ui().panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard.mainMenuInline(ctx.chatId));
+                ctx.ui().panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard().mainMenuInline(ctx.chatId));
                 return StepMove.finish();
             }
             return StepMove.go(prevStepId);

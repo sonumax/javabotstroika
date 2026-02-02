@@ -7,7 +7,7 @@ import com.sonumax2.javabot.domain.session.service.UserSessionService;
 
 public record FlowServices(
         BotUi ui,
-        KeyboardService keyboards,
+        KeyboardService keyboard,
         UserSessionService session,
         DraftService drafts
 ) {}

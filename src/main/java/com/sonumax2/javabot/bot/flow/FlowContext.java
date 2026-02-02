@@ -37,7 +37,7 @@ public class FlowContext<D extends OpDraftBase> {
     }
 
     public BotUi ui() { return services.ui(); }
-    public KeyboardService keyboards() { return services.keyboards(); }
+    public KeyboardService keyboard() { return services.keyboard(); }
     public UserSessionService session() { return services.session(); }
     public DraftService drafts() { return services.drafts(); }
 }

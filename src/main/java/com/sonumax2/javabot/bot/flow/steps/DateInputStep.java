@@ -105,7 +105,7 @@ public class DateInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
         // назад с первого шага = отмена
         if (prevStepId == null || prevStepId.isBlank()) {
-            ctx.ui().panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard.mainMenuInline(ctx.chatId));
+            ctx.ui().panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard().mainMenuInline(ctx.chatId));
             return StepMove.finish();
         }
 

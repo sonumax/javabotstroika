@@ -78,14 +78,14 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
                         ctx.chatId,
                         mode,
                         "operation.text",
-                        ctx.keyboard.operationsAddMenuInline(ctx.chatId, CbParts.ADD_OPR, CbParts.MENU)
+                        ctx.keyboard().operationsAddMenuInline(ctx.chatId, CbParts.ADD_OPR, CbParts.MENU)
                 );
                 return StepMove.finish();
             }
 
             // если это первый шаг, лучше отмена, чем go(null)
             if (prevStepId == null || prevStepId.isBlank()) {
-                ctx.ui().panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard.mainMenuInline(ctx.chatId));
+                ctx.ui().panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard().mainMenuInline(ctx.chatId));
                 return StepMove.finish();
             }
 
