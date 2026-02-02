@@ -16,5 +16,6 @@
     <include file="008-receipt-type-default-no-receipt.xml" relativeToChangelogFile="true"/>
     <include file="009-nomenclature-usage.xml" relativeToChangelogFile="true"/>
     <include file="010-syp.xml" relativeToChangelogFile="true"/>
+    <include file="011-fuel.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

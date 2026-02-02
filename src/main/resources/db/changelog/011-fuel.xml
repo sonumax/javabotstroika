@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="011-fuel" author="max">
+
+        <!-- 1) справочник техники/транспорта -->
+        <createTable tableName="equipment">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="chat_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="name_norm" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="equipment"
+                             columnNames="chat_id,name_norm"
+                             constraintName="uk_equipment_chat_name_norm"/>
+
+        <createIndex tableName="equipment" indexName="ix_equipment_chat">
+            <column name="chat_id"/>
+        </createIndex>
+
+        <createIndex tableName="equipment" indexName="ix_equipment_name_norm">
+            <column name="name_norm"/>
+        </createIndex>
+
+
+        <!-- 2) detail (1:1 к operation) -->
+        <createTable tableName="fuel_detail">
+            <column name="operation_id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <!-- TRANSPORT / MACHINE -->
+            <column name="fuel_kind" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="equipment_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="counterparty_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- литры/объем -->
+            <column name="volume" type="NUMERIC(18,3)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="fuel_detail" baseColumnNames="operation_id"
+                referencedTableName="operation" referencedColumnNames="id"
+                constraintName="fk_fuel_detail_operation"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="fuel_detail" baseColumnNames="equipment_id"
+                referencedTableName="equipment" referencedColumnNames="id"
+                constraintName="fk_fuel_detail_equipment"/>
+
+        <addForeignKeyConstraint
+                baseTableName="fuel_detail" baseColumnNames="counterparty_id"
+                referencedTableName="counterparty" referencedColumnNames="id"
+                constraintName="fk_fuel_detail_counterparty"/>
+
+        <createIndex tableName="fuel_detail" indexName="ix_fuel_detail_kind">
+            <column name="fuel_kind"/>
+        </createIndex>
+
+        <createIndex tableName="fuel_detail" indexName="ix_fuel_detail_equipment">
+            <column name="equipment_id"/>
+        </createIndex>
+
+        <createIndex tableName="fuel_detail" indexName="ix_fuel_detail_counterparty">
+            <column name="counterparty_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
