@@ -42,4 +42,28 @@ public interface NomenclatureRepository extends ListCrudRepository<Nomenclature,
         limit :limit
     """)
     List<Nomenclature> recentCreatedByChat(Long chatId, int limit);
+
+    @Query("""
+    select n.*
+    from nomenclature n
+    join nomenclature_usage u on u.nomenclature_id = n.id
+    where n.is_active = true
+      and u.usage = 'SYP'
+    order by n.name asc
+    limit :limit
+""")
+    List<Nomenclature> listActiveForSyp(int limit);
+
+    @Query("""
+    select n.*
+    from nomenclature n
+    join nomenclature_usage u on u.nomenclature_id = n.id
+    where n.is_active = true
+      and u.usage = 'SYP'
+      and n.name_norm like concat('%', :q, '%')
+    order by n.name asc
+    limit :limit
+""")
+    List<Nomenclature> searchActiveForSyp(String q, int limit);
+
 }

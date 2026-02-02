@@ -1,7 +1,9 @@
 package com.sonumax2.javabot.domain.reference.service;
 
 import com.sonumax2.javabot.domain.reference.Nomenclature;
+import com.sonumax2.javabot.domain.reference.NomenclatureUsage;
 import com.sonumax2.javabot.domain.reference.repo.NomenclatureRepository;
+import com.sonumax2.javabot.domain.reference.repo.NomenclatureUsageRepository;
 import com.sonumax2.javabot.util.NameNormUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -14,9 +16,11 @@ import java.util.stream.StreamSupport;
 public class NomenclatureService {
 
     private final NomenclatureRepository repo;
+    private final NomenclatureUsageRepository usageRepo;
 
-    public NomenclatureService(NomenclatureRepository repo) {
+    public NomenclatureService(NomenclatureRepository repo, NomenclatureUsageRepository usageRepo) {
         this.repo = repo;
+        this.usageRepo = usageRepo;
     }
 
     public Optional<Nomenclature> findActiveById(Long id) {
@@ -124,5 +128,32 @@ public class NomenclatureService {
         }
 
         return ordered;
+    }
+
+    public List<Nomenclature> suggestForSyp(long chatId, int limit) {
+        // простой вариант: просто listActiveForSyp
+        return repo.listActiveForSyp(limit);
+    }
+
+    public List<Nomenclature> searchForSyp(String raw, int limit) {
+        String norm = NameNormUtils.normalizeNorm(raw);
+        if (norm.isBlank()) return List.of();
+        return repo.searchActiveForSyp(norm, limit);
+    }
+
+    public void setSypUsage(long nomId, boolean enabled) {
+        if (enabled) {
+            if (usageRepo.existsByNomIdAndUsage(nomId, "SYP")) return;
+            NomenclatureUsage u = new NomenclatureUsage();
+            u.setNomenclatureId(nomId);
+            u.setUsage("SYP");
+            try {
+                usageRepo.save(u);
+            } catch (Exception ignore) {
+                // уникальный индекс защитит от дублей при гонке
+            }
+        } else {
+            usageRepo.deleteByNomIdAndUsage(nomId, "SYP");
+        }
     }
 }

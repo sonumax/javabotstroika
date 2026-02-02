@@ -14,5 +14,6 @@
     <include file="006-ref-search-trgm-indexes.xml" relativeToChangelogFile="true"/>
     <include file="007-add-user-session-timezone.xml" relativeToChangelogFile="true"/>
     <include file="008-receipt-type-default-no-receipt.xml" relativeToChangelogFile="true"/>
+    <include file="009-nomenclature-usage.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
