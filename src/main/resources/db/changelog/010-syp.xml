@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="010-syp" author="max">
+
+        <!-- 1) detail (1:1 к operation) -->
+        <createTable tableName="syp_detail">
+            <column name="operation_id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="work_object_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="counterparty_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- тип оплаты: CASH / CASHLESS -->
+            <column name="pay_type" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="syp_detail" baseColumnNames="operation_id"
+                referencedTableName="operation" referencedColumnNames="id"
+                constraintName="fk_syp_detail_operation"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="syp_detail" baseColumnNames="work_object_id"
+                referencedTableName="work_object" referencedColumnNames="id"
+                constraintName="fk_syp_detail_work_object"/>
+
+        <addForeignKeyConstraint
+                baseTableName="syp_detail" baseColumnNames="counterparty_id"
+                referencedTableName="counterparty" referencedColumnNames="id"
+                constraintName="fk_syp_detail_counterparty"/>
+
+        <createIndex tableName="syp_detail" indexName="ix_syp_detail_work_object">
+            <column name="work_object_id"/>
+        </createIndex>
+
+        <createIndex tableName="syp_detail" indexName="ix_syp_detail_counterparty">
+            <column name="counterparty_id"/>
+        </createIndex>
+
+        <createIndex tableName="syp_detail" indexName="ix_syp_detail_pay_type">
+            <column name="pay_type"/>
+        </createIndex>
+
+        <!-- 2) items (список материалов) -->
+        <createTable tableName="syp_item">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="operation_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="nomenclature_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- объем: песок/щебень обычно м3 или т; храним просто число -->
+            <column name="volume" type="NUMERIC(18,3)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="syp_item" baseColumnNames="operation_id"
+                referencedTableName="operation" referencedColumnNames="id"
+                constraintName="fk_syp_item_operation"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="syp_item" baseColumnNames="nomenclature_id"
+                referencedTableName="nomenclature" referencedColumnNames="id"
+                constraintName="fk_syp_item_nomenclature"/>
+
+        <createIndex tableName="syp_item" indexName="ix_syp_item_operation">
+            <column name="operation_id"/>
+        </createIndex>
+
+        <createIndex tableName="syp_item" indexName="ix_syp_item_nomenclature">
+            <column name="nomenclature_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

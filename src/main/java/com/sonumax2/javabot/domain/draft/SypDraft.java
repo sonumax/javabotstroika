@@ -1,6 +1,7 @@
 package com.sonumax2.javabot.domain.draft;
 
 import com.sonumax2.javabot.domain.operation.DocType;
+import com.sonumax2.javabot.domain.operation.PayType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,8 +21,7 @@ public class SypDraft extends OpDraftBase {
     public Long counterpartyId;
     public String pendingCounterpartyName;
 
-    // pay type (если нужно; если нет — можешь удалить)
-    public String payType;
+    public PayType payType;
 
     // items (материал + объем)
     public List<SypItem> items = new ArrayList<>();
