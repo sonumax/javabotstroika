@@ -66,7 +66,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
     public void show(FlowContext<D> ctx, PanelMode mode) {
         String pending = safe(pendingGetter.apply(ctx.d)).trim();
         if (pending.isBlank()) {
-            ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx, List.of(), null));
+            ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx, List.of(), null));
             return;
         }
 
@@ -76,7 +76,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
         List<T> found = searcher.apply(ctx, pending, limit);
         List<T> merged = mergeExactFirst(exact.orElse(null), found, limit);
 
-        ctx.ui.panelText(
+        ctx.ui().panelText(
                 ctx.chatId,
                 mode,
                 renderText(ctx, pending, merged, exactId != null),
@@ -89,7 +89,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
         String input = safe(raw).trim();
         if (input.isBlank()) {
             pendingSetter.accept(ctx.d, null);
-            ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx, List.of(), null));
+            ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx, List.of(), null));
             return StepMove.rendered();
         }
 
@@ -105,7 +105,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
         // 2) нет точного -> показываем похожие + кнопка создать
         pendingSetter.accept(ctx.d, input);
         List<T> found = searcher.apply(ctx, input, limit);
-        ctx.ui.panelText(ctx.chatId, mode, renderText(ctx, input, found, false), kb(ctx, found, null));
+        ctx.ui().panelText(ctx.chatId, mode, renderText(ctx, input, found, false), kb(ctx, found, null));
         return StepMove.rendered();
     }
 
@@ -132,7 +132,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
         if (FlowCb.is(data, ns, id, "create")) {
             String pending = safe(pendingGetter.apply(ctx.d)).trim();
             if (pending.isBlank()) {
-                ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx, List.of(), null));
+                ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx, List.of(), null));
                 return StepMove.rendered();
             }
 
@@ -147,21 +147,21 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
     }
 
     private String renderText(FlowContext<D> ctx, String input, List<T> found, boolean hasExact) {
-        String base = ctx.ui.msg(ctx.chatId, askKey);
+        String base = ctx.ui().msg(ctx.chatId, askKey);
 
         if (found == null || found.isEmpty()) {
-            return base + "\n" + ctx.ui.msg(ctx.chatId, KEY_REF_SEARCH_NONE, input);
+            return base + "\n" + ctx.ui().msg(ctx.chatId, KEY_REF_SEARCH_NONE, input);
         }
 
         if (hasExact) {
             if (found.size() == 1) {
-                return base + "\n" + ctx.ui.msg(ctx.chatId, KEY_REF_SEARCH_EXACT);
+                return base + "\n" + ctx.ui().msg(ctx.chatId, KEY_REF_SEARCH_EXACT);
             }
-            return base + "\n" + ctx.ui.msg(ctx.chatId, KEY_REF_SEARCH_EXACT)
-                    + "\n" + ctx.ui.msg(ctx.chatId, KEY_REF_SEARCH_FOUND, input);
+            return base + "\n" + ctx.ui().msg(ctx.chatId, KEY_REF_SEARCH_EXACT)
+                    + "\n" + ctx.ui().msg(ctx.chatId, KEY_REF_SEARCH_FOUND, input);
         }
 
-        return base + "\n" + ctx.ui.msg(ctx.chatId, KEY_REF_SEARCH_FOUND, input);
+        return base + "\n" + ctx.ui().msg(ctx.chatId, KEY_REF_SEARCH_FOUND, input);
     }
 
 
@@ -188,7 +188,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
 
         if (!pending.isBlank() && exactId == null) {
             rows.add(new InlineKeyboardRow(
-                    btnText(ctx.ui.msg(ctx.chatId, KEY_REF_CREATE_BTN, cut(pending, 30)), FlowCb.cb(ns, id, "create"))
+                    btnText(ctx.ui().msg(ctx.chatId, KEY_REF_CREATE_BTN, cut(pending, 30)), FlowCb.cb(ns, id, "create"))
             ));
         }
 
@@ -199,7 +199,7 @@ public class SearchPickOrCreateRefStep<D extends OpDraftBase, T extends BaseRefE
 
     private InlineKeyboardButton btnKey(FlowContext<D> ctx, String textKey, String cb) {
         return InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, textKey))
+                .text(ctx.ui().msg(ctx.chatId, textKey))
                 .callbackData(cb)
                 .build();
     }

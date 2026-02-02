@@ -75,7 +75,7 @@ public class TextInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     @Override
     public void show(FlowContext<D> ctx, PanelMode mode) {
-        ctx.ui.panelKey(ctx.chatId, mode, askKey, keyboard(ctx, false));
+        ctx.ui().panelKey(ctx.chatId, mode, askKey, keyboard(ctx, false));
     }
 
     @Override
@@ -105,7 +105,7 @@ public class TextInputStep<D extends OpDraftBase> implements FlowStep<D> {
         String err = (validator == null) ? null : validator.validate(text);
         if (text.isEmpty() || err != null) {
             String key = (err != null) ? err : invalidKey;
-            ctx.ui.panelKey(ctx.chatId, mode, key, keyboard(ctx, true));
+            ctx.ui().panelKey(ctx.chatId, mode, key, keyboard(ctx, true));
             return StepMove.rendered();
         }
 
@@ -137,7 +137,7 @@ public class TextInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     private InlineKeyboardButton btn(FlowContext<D> ctx, String textKey, String cb) {
         return InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, textKey))
+                .text(ctx.ui().msg(ctx.chatId, textKey))
                 .callbackData(cb)
                 .build();
     }

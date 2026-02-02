@@ -64,10 +64,10 @@ public class LineItemsStep<D extends OpDraftBase> implements FlowStep<D> {
         List<ExpenseLineItem> items = safe(itemsGetter.apply(ctx.d));
 
         StringBuilder sb = new StringBuilder();
-        sb.append(ctx.ui.msg(ctx.chatId, titleKey));
+        sb.append(ctx.ui().msg(ctx.chatId, titleKey));
 
         if (items.isEmpty()) {
-            sb.append("\n\n").append(ctx.ui.msg(ctx.chatId, "lineItems.empty"));
+            sb.append("\n\n").append(ctx.ui().msg(ctx.chatId, "lineItems.empty"));
         } else {
             BigDecimal total = BigDecimal.ZERO;
             for (int i = 0; i < items.size(); i++) {
@@ -80,10 +80,10 @@ public class LineItemsStep<D extends OpDraftBase> implements FlowStep<D> {
                 sb.append("\n").append(i + 1).append(") ").append(name).append(" — ").append(vol);
             }
 
-            sb.append("\n\n").append(ctx.ui.msg(ctx.chatId, "lineItems.total", total.toPlainString()));
+            sb.append("\n\n").append(ctx.ui().msg(ctx.chatId, "lineItems.total", total.toPlainString()));
         }
 
-        ctx.ui.panelText(ctx.chatId, mode, sb.toString(), kb(ctx, items));
+        ctx.ui().panelText(ctx.chatId, mode, sb.toString(), kb(ctx, items));
     }
 
     @Override
@@ -158,7 +158,7 @@ public class LineItemsStep<D extends OpDraftBase> implements FlowStep<D> {
     }
 
     private InlineKeyboardButton btnKey(FlowContext<D> ctx, String key, String cb) {
-        return InlineKeyboardButton.builder().text(ctx.ui.msg(ctx.chatId, key)).callbackData(cb).build();
+        return InlineKeyboardButton.builder().text(ctx.ui().msg(ctx.chatId, key)).callbackData(cb).build();
     }
 
     private InlineKeyboardButton btnText(String text, String cb) {

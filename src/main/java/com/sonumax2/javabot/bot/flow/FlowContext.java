@@ -11,10 +11,7 @@ public class FlowContext<D extends OpDraftBase> {
 
     public final long chatId;
 
-    public final BotUi ui;
-    public final KeyboardService keyboard;
-    public final UserSessionService session;
-    public final DraftService drafts;
+    public final FlowServices services;
 
     public final DraftType draftType;
     public final Class<D> draftClass;
@@ -25,23 +22,22 @@ public class FlowContext<D extends OpDraftBase> {
 
     public FlowContext(
             long chatId,
-            BotUi ui,
-            KeyboardService keyboard,
-            UserSessionService session,
-            DraftService drafts,
+            FlowServices services,
             DraftType draftType,
             Class<D> draftClass,
             FlowDefinition<D> def,
             D d
     ) {
         this.chatId = chatId;
-        this.ui = ui;
-        this.keyboard = keyboard;
-        this.session = session;
-        this.drafts = drafts;
+        this.services = services;
         this.draftType = draftType;
         this.draftClass = draftClass;
         this.def = def;
         this.d = d;
     }
+
+    public BotUi ui() { return services.ui(); }
+    public KeyboardService keyboards() { return services.keyboards(); }
+    public UserSessionService session() { return services.session(); }
+    public DraftService drafts() { return services.drafts(); }
 }

@@ -49,13 +49,13 @@ public class DateInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     @Override
     public void show(FlowContext<D> ctx, PanelMode mode) {
-        ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+        ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
     }
 
     @Override
     public StepMove onCallback(FlowContext<D> ctx, String data, PanelMode mode) {
         String ns = ctx.def.ns;
-        LocalDate today = LocalDate.now(ctx.session.getZoneId(ctx.chatId));
+        LocalDate today = LocalDate.now(ctx.session().getZoneId(ctx.chatId));
 
         if (FlowCb.is(data, ns, id, "back")) {
             return onBack(ctx, mode);
@@ -86,7 +86,7 @@ public class DateInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     @Override
     public StepMove onText(FlowContext<D> ctx, String raw, PanelMode mode) {
-        LocalDate today = LocalDate.now(ctx.session.getZoneId(ctx.chatId));
+        LocalDate today = LocalDate.now(ctx.session().getZoneId(ctx.chatId));
         DateParseResult res = InputParseUtils.parseSmartDate(raw, today);
 
         if (res.error != DateParseResult.Error.NONE) {
@@ -105,7 +105,7 @@ public class DateInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
         // назад с первого шага = отмена
         if (prevStepId == null || prevStepId.isBlank()) {
-            ctx.ui.panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard.mainMenuInline(ctx.chatId));
+            ctx.ui().panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard.mainMenuInline(ctx.chatId));
             return StepMove.finish();
         }
 
@@ -118,7 +118,7 @@ public class DateInputStep<D extends OpDraftBase> implements FlowStep<D> {
     }
 
     private StepMove render(FlowContext<D> ctx, PanelMode mode, String msgKey) {
-        ctx.ui.panelKey(ctx.chatId, mode, msgKey, kb(ctx));
+        ctx.ui().panelKey(ctx.chatId, mode, msgKey, kb(ctx));
         return StepMove.rendered();
     }
 
@@ -138,7 +138,7 @@ public class DateInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     private InlineKeyboardButton btn(FlowContext<D> ctx, String textKey, String cb) {
         return InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, textKey))
+                .text(ctx.ui().msg(ctx.chatId, textKey))
                 .callbackData(cb)
                 .build();
     }

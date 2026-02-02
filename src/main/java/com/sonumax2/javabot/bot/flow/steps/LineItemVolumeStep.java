@@ -60,7 +60,7 @@ public class LineItemVolumeStep<D extends OpDraftBase> implements FlowStep<D> {
     public void show(FlowContext<D> ctx, PanelMode mode) {
         Long nid = pendingIdGetter.apply(ctx.d);
         String name = nid == null ? "?" : nameResolver.apply(ctx, nid);
-        ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx), name);
+        ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx), name);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class LineItemVolumeStep<D extends OpDraftBase> implements FlowStep<D> {
     public StepMove onText(FlowContext<D> ctx, String raw, PanelMode mode) {
         BigDecimal v = InputParseUtils.parseDecimal(raw);
         if (v == null || v.signum() <= 0) {
-            ctx.ui.panelKey(ctx.chatId, mode, invalidKey, kb(ctx));
+            ctx.ui().panelKey(ctx.chatId, mode, invalidKey, kb(ctx));
             return StepMove.rendered();
         }
 
@@ -118,7 +118,7 @@ public class LineItemVolumeStep<D extends OpDraftBase> implements FlowStep<D> {
 
     private InlineKeyboardButton btn(FlowContext<D> ctx, String textKey, String cb) {
         return InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, textKey))
+                .text(ctx.ui().msg(ctx.chatId, textKey))
                 .callbackData(cb)
                 .build();
     }

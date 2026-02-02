@@ -61,7 +61,7 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
 
     @Override
     public void show(FlowContext<D> ctx, PanelMode mode) {
-        ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+        ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
     }
 
     @Override
@@ -74,7 +74,7 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
 
             // спец: вернуться в меню выбора операции
             if ("@opsMenu".equals(prevStepId)) {
-                ctx.ui.panelKey(
+                ctx.ui().panelKey(
                         ctx.chatId,
                         mode,
                         "operation.text",
@@ -85,7 +85,7 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
 
             // если это первый шаг, лучше отмена, чем go(null)
             if (prevStepId == null || prevStepId.isBlank()) {
-                ctx.ui.panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard.mainMenuInline(ctx.chatId));
+                ctx.ui().panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard.mainMenuInline(ctx.chatId));
                 return StepMove.finish();
             }
 
@@ -165,7 +165,7 @@ public class SelectFromTopStep<D extends OpDraftBase, T extends BaseRefEntity> i
 
     private InlineKeyboardButton btn(FlowContext<D> ctx, String textKey, String cb) {
         return InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, textKey))
+                .text(ctx.ui().msg(ctx.chatId, textKey))
                 .callbackData(cb)
                 .build();
     }

@@ -51,7 +51,7 @@ public class EnumSelectStep<D extends OpDraftBase, E extends Enum<E>> implements
 
     @Override
     public void show(FlowContext<D> ctx, PanelMode mode) {
-        ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+        ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
     }
 
     @Override
@@ -72,7 +72,7 @@ public class EnumSelectStep<D extends OpDraftBase, E extends Enum<E>> implements
                 return FlowNav.goOrConfirm(ctx, nextStepId);
             } catch (Exception ignore) {
                 // просто перерисуем
-                ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+                ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
                 return StepMove.rendered();
             }
         }
@@ -97,7 +97,7 @@ public class EnumSelectStep<D extends OpDraftBase, E extends Enum<E>> implements
 
     private InlineKeyboardButton btn(FlowContext<D> ctx, String textKey, String cb) {
         return InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, textKey))
+                .text(ctx.ui().msg(ctx.chatId, textKey))
                 .callbackData(cb)
                 .build();
     }

@@ -58,7 +58,7 @@ public class ConfirmStep<D extends OpDraftBase> implements FlowStep<D> {
 
     @Override
     public void show(FlowContext<D> ctx, PanelMode mode) {
-        ctx.ui.panelText(ctx.chatId, mode, render.apply(ctx), kb(ctx));
+        ctx.ui().panelText(ctx.chatId, mode, render.apply(ctx), kb(ctx));
     }
 
     @Override
@@ -91,12 +91,12 @@ public class ConfirmStep<D extends OpDraftBase> implements FlowStep<D> {
         List<InlineKeyboardRow> rows = new ArrayList<>();
 
         InlineKeyboardButton save = InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, "btnSave"))
+                .text(ctx.ui().msg(ctx.chatId, "btnSave"))
                 .callbackData(FlowCb.cb(ns, id, "save"))
                 .build();
 
         InlineKeyboardButton cancel = InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, "btnCancel"))
+                .text(ctx.ui().msg(ctx.chatId, "btnCancel"))
                 .callbackData(FlowCb.cb(ns, id, "cancel"))
                 .build();
 
@@ -108,7 +108,7 @@ public class ConfirmStep<D extends OpDraftBase> implements FlowStep<D> {
 
         for (EditBtn e : list) {
             InlineKeyboardButton btn = InlineKeyboardButton.builder()
-                    .text(ctx.ui.msg(ctx.chatId, e.textKey()))
+                    .text(ctx.ui().msg(ctx.chatId, e.textKey()))
                     .callbackData(FlowCb.cb(ns, id, "edit", e.stepId()))
                     .build();
 

@@ -50,7 +50,7 @@ public class DocTypeSelectStep<D extends OpDraftBase> implements FlowStep<D> {
 
     @Override
     public void show(FlowContext<D> ctx, PanelMode mode) {
-        ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+        ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
     }
 
     @Override
@@ -81,7 +81,7 @@ public class DocTypeSelectStep<D extends OpDraftBase> implements FlowStep<D> {
                 return StepMove.go(v.needsFile() ? nextNeedsFile : nextNoFile);
 
             } catch (Exception ignore) {
-                ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+                ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
                 return StepMove.rendered();
             }
         }
@@ -102,7 +102,7 @@ public class DocTypeSelectStep<D extends OpDraftBase> implements FlowStep<D> {
 
     private InlineKeyboardButton btn(FlowContext<D> ctx, String textKey, String cb) {
         return InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, textKey))
+                .text(ctx.ui().msg(ctx.chatId, textKey))
                 .callbackData(cb)
                 .build();
     }

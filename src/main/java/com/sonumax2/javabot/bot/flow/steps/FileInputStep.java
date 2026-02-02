@@ -50,7 +50,7 @@ public class FileInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     @Override
     public void show(FlowContext<D> ctx, PanelMode mode) {
-        ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+        ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
     }
 
     @Override
@@ -62,7 +62,7 @@ public class FileInputStep<D extends OpDraftBase> implements FlowStep<D> {
             if (m != null) return m;
             
             if (prevStepId == null || prevStepId.isBlank()) {
-                ctx.ui.panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard.mainMenuInline(ctx.chatId));
+                ctx.ui().panelKey(ctx.chatId, mode, "cancelled", ctx.keyboard.mainMenuInline(ctx.chatId));
                 return StepMove.finish();
             }
             return StepMove.go(prevStepId);
@@ -106,7 +106,7 @@ public class FileInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     private InlineKeyboardButton btn(FlowContext<D> ctx, String textKey, String cb) {
         return InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, textKey))
+                .text(ctx.ui().msg(ctx.chatId, textKey))
                 .callbackData(cb)
                 .build();
     }

@@ -46,7 +46,7 @@ public class AmountInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     @Override
     public void show(FlowContext<D> ctx, PanelMode mode) {
-        ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+        ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
     }
 
     @Override
@@ -67,7 +67,7 @@ public class AmountInputStep<D extends OpDraftBase> implements FlowStep<D> {
         BigDecimal amount = InputParseUtils.parseAmount(raw);
 
         if (amount == null || amount.signum() <= 0) {
-            ctx.ui.panelKey(ctx.chatId, mode, invalidKey, kb(ctx));
+            ctx.ui().panelKey(ctx.chatId, mode, invalidKey, kb(ctx));
             return StepMove.rendered();
         }
 
@@ -85,7 +85,7 @@ public class AmountInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     private InlineKeyboardButton btn(FlowContext<D> ctx, String textKey, String cb) {
         return InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, textKey))
+                .text(ctx.ui().msg(ctx.chatId, textKey))
                 .callbackData(cb)
                 .build();
     }

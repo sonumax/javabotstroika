@@ -14,15 +14,17 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 public class FlowEngine {
 
     private final BotUi ui;
-    private final KeyboardService keyboard;
+    private final KeyboardService keyboardService;
     private final UserSessionService session;
     private final DraftService drafts;
+    private final FlowServices services;
 
-    public FlowEngine(BotUi ui, KeyboardService keyboard, UserSessionService session, DraftService drafts) {
+    public FlowEngine(BotUi ui, KeyboardService keyboardService, UserSessionService session, DraftService drafts, FlowServices services) {
         this.ui = ui;
-        this.keyboard = keyboard;
+        this.keyboardService = keyboardService;
         this.session = session;
         this.drafts = drafts;
+        this.services = new FlowServices(ui, keyboardService, session, drafts);
     }
 
     public <D extends OpDraftBase> void handle(Update update, FlowDefinition<D> def) {
@@ -191,7 +193,7 @@ public class FlowEngine {
     }
 
     private <D extends OpDraftBase> void showStep(FlowContext<D> ctx, String stepId, PanelMode mode) {
-        ctx.session.setUserState(ctx.chatId, UserState.FLOW_WAIT_INPUT);
+        ctx.session().setUserState(ctx.chatId, UserState.FLOW_WAIT_INPUT);
 
         FlowStep<D> step = ctx.def.step(stepId);
         if (step != null) step.show(ctx, mode);
@@ -200,10 +202,7 @@ public class FlowEngine {
     private <D extends OpDraftBase> FlowContext<D> ctx(long chatId, FlowDefinition<D> def, D d) {
         return new FlowContext<>(
                 chatId,
-                ui,
-                keyboard,
-                session,
-                drafts,
+                services,
                 def.draftType,
                 def.draftClass,
                 def,

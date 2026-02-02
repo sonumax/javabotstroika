@@ -42,7 +42,7 @@ public class CreateFromTextStep<D extends OpDraftBase> implements FlowStep<D> {
 
     @Override
     public void show(FlowContext<D> ctx, PanelMode mode) {
-        ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+        ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
     }
 
     @Override
@@ -61,14 +61,14 @@ public class CreateFromTextStep<D extends OpDraftBase> implements FlowStep<D> {
     public StepMove onText(FlowContext<D> ctx, String raw, PanelMode mode) {
         String text = raw == null ? "" : raw.trim();
         if (text.isBlank()) {
-            ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+            ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
             return StepMove.rendered();
         }
 
         try {
             Long id = createId.apply(ctx, text);
             if (id == null) {
-                ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+                ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
                 return StepMove.rendered();
             }
 
@@ -77,7 +77,7 @@ public class CreateFromTextStep<D extends OpDraftBase> implements FlowStep<D> {
             return FlowNav.goOrConfirm(ctx, nextStepId);
 
         } catch (Exception e) {
-            ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));
+            ctx.ui().panelKey(ctx.chatId, mode, askKey, kb(ctx));
             return StepMove.rendered();
         }
     }
@@ -85,7 +85,7 @@ public class CreateFromTextStep<D extends OpDraftBase> implements FlowStep<D> {
     private InlineKeyboardMarkup kb(FlowContext<D> ctx) {
         String ns = ctx.def.ns;
         InlineKeyboardButton back = InlineKeyboardButton.builder()
-                .text(ctx.ui.msg(ctx.chatId, "back"))
+                .text(ctx.ui().msg(ctx.chatId, "back"))
                 .callbackData(FlowCb.cb(ns, id, "back"))
                 .build();
 
