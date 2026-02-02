@@ -1,9 +1,6 @@
 package com.sonumax2.javabot.bot.flow.steps;
 
-import com.sonumax2.javabot.bot.flow.FlowContext;
-import com.sonumax2.javabot.bot.flow.FlowDefinition;
-import com.sonumax2.javabot.bot.flow.FlowStep;
-import com.sonumax2.javabot.bot.flow.StepMove;
+import com.sonumax2.javabot.bot.flow.*;
 import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.ExpenseLineItem;
 import com.sonumax2.javabot.domain.draft.OpDraftBase;
@@ -71,7 +68,8 @@ public class LineItemVolumeStep<D extends OpDraftBase> implements FlowStep<D> {
         String ns = ctx.def.ns;
 
         if (FlowCb.is(data, ns, id, "back")) {
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
+            StepMove m = FlowNav.confirmIfNeeded(ctx);
+            if (m != null) return m;
             return StepMove.go(prevStepId);
         }
         return StepMove.unhandled();

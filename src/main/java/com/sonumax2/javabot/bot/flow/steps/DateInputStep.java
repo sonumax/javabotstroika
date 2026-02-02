@@ -1,9 +1,6 @@
 package com.sonumax2.javabot.bot.flow.steps;
 
-import com.sonumax2.javabot.bot.flow.FlowContext;
-import com.sonumax2.javabot.bot.flow.FlowDefinition;
-import com.sonumax2.javabot.bot.flow.FlowStep;
-import com.sonumax2.javabot.bot.flow.StepMove;
+import com.sonumax2.javabot.bot.flow.*;
 import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.OpDraftBase;
 import com.sonumax2.javabot.util.DateParseResult;
@@ -103,7 +100,8 @@ public class DateInputStep<D extends OpDraftBase> implements FlowStep<D> {
     }
 
     private StepMove onBack(FlowContext<D> ctx, PanelMode mode) {
-        if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
+        StepMove m = FlowNav.confirmIfNeeded(ctx);
+        if (m != null) return m;
 
         // назад с первого шага = отмена
         if (prevStepId == null || prevStepId.isBlank()) {
@@ -116,8 +114,7 @@ public class DateInputStep<D extends OpDraftBase> implements FlowStep<D> {
 
     private StepMove applyAndNext(FlowContext<D> ctx, LocalDate date) {
         setter.accept(ctx.d, date);
-        if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
-        return StepMove.go(nextStepId);
+        return FlowNav.goOrConfirm(ctx, nextStepId);
     }
 
     private StepMove render(FlowContext<D> ctx, PanelMode mode, String msgKey) {

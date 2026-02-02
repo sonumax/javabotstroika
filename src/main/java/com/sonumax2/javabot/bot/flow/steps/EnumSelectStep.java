@@ -1,9 +1,6 @@
 package com.sonumax2.javabot.bot.flow.steps;
 
-import com.sonumax2.javabot.bot.flow.FlowContext;
-import com.sonumax2.javabot.bot.flow.FlowDefinition;
-import com.sonumax2.javabot.bot.flow.FlowStep;
-import com.sonumax2.javabot.bot.flow.StepMove;
+import com.sonumax2.javabot.bot.flow.*;
 import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.OpDraftBase;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -62,7 +59,8 @@ public class EnumSelectStep<D extends OpDraftBase, E extends Enum<E>> implements
         String ns = ctx.def.ns;
 
         if (FlowCb.is(data, ns, id, "back")) {
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
+            StepMove m = FlowNav.confirmIfNeeded(ctx);
+            if (m != null) return m;
             return StepMove.go(prevStepId);
         }
 
@@ -71,8 +69,7 @@ public class EnumSelectStep<D extends OpDraftBase, E extends Enum<E>> implements
             try {
                 E val = Enum.valueOf(enumClass, name);
                 setter.accept(ctx.d, val);
-                if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
-                return StepMove.go(nextStepId);
+                return FlowNav.goOrConfirm(ctx, nextStepId);
             } catch (Exception ignore) {
                 // просто перерисуем
                 ctx.ui.panelKey(ctx.chatId, mode, askKey, kb(ctx));

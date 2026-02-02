@@ -1,9 +1,6 @@
 package com.sonumax2.javabot.bot.flow.steps;
 
-import com.sonumax2.javabot.bot.flow.FlowContext;
-import com.sonumax2.javabot.bot.flow.FlowDefinition;
-import com.sonumax2.javabot.bot.flow.FlowStep;
-import com.sonumax2.javabot.bot.flow.StepMove;
+import com.sonumax2.javabot.bot.flow.*;
 import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.ExpenseLineItem;
 import com.sonumax2.javabot.domain.draft.OpDraftBase;
@@ -94,7 +91,8 @@ public class LineItemsStep<D extends OpDraftBase> implements FlowStep<D> {
         String ns = ctx.def.ns;
 
         if (FlowCb.is(data, ns, id, "back")) {
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
+            StepMove m = FlowNav.confirmIfNeeded(ctx);
+            if (m != null) return m;
             return StepMove.go(prevStepId);
         }
 
@@ -115,8 +113,8 @@ public class LineItemsStep<D extends OpDraftBase> implements FlowStep<D> {
                 show(ctx, PanelMode.EDIT);
                 return StepMove.rendered();
             }
-            if (ctx.d.consumeReturnToConfirm()) return StepMove.go(FlowDefinition.STEP_CONFIRM);
-            return StepMove.go(nextStepId);
+
+            return FlowNav.goOrConfirm(ctx, nextStepId);
         }
 
         if (FlowCb.startsWith(data, ns, id, "rm")) {
