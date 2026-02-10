@@ -18,5 +18,6 @@
     <include file="010-syp.xml" relativeToChangelogFile="true"/>
     <include file="011-fuel.xml" relativeToChangelogFile="true"/>
     <include file="012-add-receipt-type.xml" relativeToChangelogFile="true"/>
+    <include file="013-fuel-machine-type.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
