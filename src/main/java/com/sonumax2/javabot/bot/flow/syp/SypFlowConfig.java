@@ -173,7 +173,6 @@ public class SypFlowConfig {
                 .search((ctx, text, lim) -> nomenclatureService.searchForSyp(text, lim)) // режим A
                 .create((ctx, text) -> {
                     long id = nomenclatureService.getOrCreate(text, ctx.chatId).getId();
-                    nomenclatureService.setSypUsage(id, true); // новый материал сразу помечаем как SYP
                     return id;
                 })
                 .backTo(S_ITEM_PICK)

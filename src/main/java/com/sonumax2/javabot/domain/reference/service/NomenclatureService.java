@@ -1,5 +1,6 @@
 package com.sonumax2.javabot.domain.reference.service;
 
+import com.sonumax2.javabot.domain.draft.DraftType;
 import com.sonumax2.javabot.domain.reference.Nomenclature;
 import com.sonumax2.javabot.domain.reference.NomenclatureUsage;
 import com.sonumax2.javabot.domain.reference.repo.NomenclatureRepository;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -153,6 +155,22 @@ public class NomenclatureService {
             }
         } else {
             usageRepo.deleteByNomIdAndUsage(nomId, "SYP");
+        }
+    }
+
+    public void markUsedInSyp(Collection<Long> nomenclatureIds) {
+        if (nomenclatureIds == null || nomenclatureIds.isEmpty()) return;
+
+        Set<Long> ids = nomenclatureIds.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (ids.isEmpty()) return;
+
+        String usageType = DraftType.SYP.key(); // или "SYP" — как у тебя сделано в БД
+
+        for (Long id : ids) {
+            usageRepo.touch(id, usageType);
         }
     }
 }

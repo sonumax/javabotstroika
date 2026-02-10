@@ -6,11 +6,14 @@ import com.sonumax2.javabot.domain.operation.*;
 import com.sonumax2.javabot.domain.operation.repo.SypDetailRepository;
 import com.sonumax2.javabot.domain.operation.repo.SypItemRepository;
 import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
+import com.sonumax2.javabot.domain.reference.service.NomenclatureService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class SypService {
@@ -18,13 +21,15 @@ public class SypService {
     private final OperationRepository operationRepo;
     private final SypDetailRepository detailRepo;
     private final SypItemRepository itemRepo;
+    private final NomenclatureService nomenclatureService;
 
     public SypService(OperationRepository operationRepo,
                       SypDetailRepository detailRepo,
-                      SypItemRepository itemRepo) {
+                      SypItemRepository itemRepo, NomenclatureService nomenclatureService) {
         this.operationRepo = operationRepo;
         this.detailRepo = detailRepo;
         this.itemRepo = itemRepo;
+        this.nomenclatureService = nomenclatureService;
     }
 
     @Transactional
@@ -48,14 +53,13 @@ public class SypService {
 
         op = operationRepo.save(op);
 
-        // detail (docType хранится тут)
-        SypDetail detail = new SypDetail();
-        detail.setOperationId(op.getId());
-        detail.setWorkObjectId(d.objectId);
-        detail.setCounterpartyId(d.counterpartyId);
-        detail.setPayType(d.payType);
-        detail.setDocType(dt);
-        detailRepo.save(detail);
+        detailRepo.insertOne(
+                op.getId(),
+                d.objectId,
+                d.counterpartyId,
+                d.payType.name(),
+                dt.name()
+        );
 
         // items: сначала очистить (на случай редактирования/повторного save)
         itemRepo.deleteByOperationId(op.getId());
@@ -64,6 +68,13 @@ public class SypService {
             if (it == null || it.nomenclatureId == null || it.volume == null) continue;
             itemRepo.insertOne(op.getId(), it.nomenclatureId, it.volume);
         }
+
+        Set<Long> ids = d.items.stream()
+                .map(it -> it.nomenclatureId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        nomenclatureService.markUsedInSyp(ids);
 
         return op.getId();
     }

@@ -1,6 +1,7 @@
 package com.sonumax2.javabot.domain.reference.repo;
 
 import com.sonumax2.javabot.domain.reference.NomenclatureUsage;
+import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.ListCrudRepository;
 
@@ -28,4 +29,12 @@ public interface NomenclatureUsageRepository extends ListCrudRepository<Nomencla
         where nomenclature_id = :nomId and usage = :usage
     """)
     boolean existsByNomIdAndUsage(Long nomId, String usage);
+
+    @Modifying
+    @Query("""
+        insert into nomenclature_usage(nomenclature_id, usage_type)
+        values (:nomenclatureId, :usageType)
+        on conflict (nomenclature_id, usage_type) do nothing
+    """)
+    void touch(long nomenclatureId, String usageType);
 }
