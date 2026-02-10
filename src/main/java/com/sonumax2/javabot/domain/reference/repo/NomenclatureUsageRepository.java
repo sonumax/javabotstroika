@@ -17,6 +17,7 @@ public interface NomenclatureUsageRepository extends ListCrudRepository<Nomencla
     """)
     List<NomenclatureUsage> findByUsage(String usage);
 
+    @Modifying
     @Query("""
         delete from nomenclature_usage
         where nomenclature_id = :nomId and usage = :usage
@@ -32,9 +33,9 @@ public interface NomenclatureUsageRepository extends ListCrudRepository<Nomencla
 
     @Modifying
     @Query("""
-        insert into nomenclature_usage(nomenclature_id, usage_type)
-        values (:nomenclatureId, :usageType)
-        on conflict (nomenclature_id, usage_type) do nothing
+        insert into nomenclature_usage(nomenclature_id, usage)
+        values (:nomenclatureId, :usage)
+        on conflict (nomenclature_id, usage) do nothing
     """)
     void touch(long nomenclatureId, String usageType);
 }
