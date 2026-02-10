@@ -8,6 +8,7 @@ import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Service
@@ -33,6 +34,7 @@ public class FuelService {
                 : OperationType.FUEL_TRANSPORT;
 
         Operation op = new Operation();
+        op.setCreatedAt(LocalDateTime.now());
         op.setChatId(chatId);
         op.setOpType(opType);
 

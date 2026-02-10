@@ -9,6 +9,7 @@ import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Service
@@ -34,6 +35,7 @@ public class SypService {
         DocType dt = (d.docType == null) ? DocType.NO_RECEIPT : d.docType;
 
         Operation op = new Operation();
+        op.setCreatedAt(LocalDateTime.now());
         op.setChatId(chatId);
         op.setOpType(OperationType.SYP);
 

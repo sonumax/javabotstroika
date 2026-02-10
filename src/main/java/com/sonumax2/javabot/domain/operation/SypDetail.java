@@ -7,8 +7,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @Table("syp_detail")
 public class SypDetail {
 
-    @Id
-    @Column("operation_id") private Long operationId;
+    @Id @Column("operation_id") private Long operationId;
 
     @Column("work_object_id") private Long workObjectId;
     @Column("counterparty_id") private Long counterpartyId;

@@ -1,13 +1,14 @@
 package com.sonumax2.javabot.domain.operation.repo;
 
+import com.sonumax2.javabot.domain.operation.SypItem;
 import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
-import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.ListCrudRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public interface SypItemRepository extends Repository<Object, Long> {
+public interface SypItemRepository extends ListCrudRepository<SypItem, Long> {
 
     record Row(Long nomenclatureId, BigDecimal volume) {}
 
