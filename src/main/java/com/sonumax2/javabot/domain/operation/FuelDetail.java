@@ -13,6 +13,7 @@ public class FuelDetail {
     @Id
     @Column("operation_id") private Long operationId;
     @Column("fuel_kind") private FuelKind fuelKind; // "TRANSPORT" / "MACHINE"
+    @Column("machine_type_id") private Long machineTypeId;
     @Column("equipment_id") private Long equipmentId;
     @Column("counterparty_id") private Long counterpartyId;
     @Column("volume") private BigDecimal volume;
@@ -33,8 +34,9 @@ public class FuelDetail {
     public Long getCounterpartyId() { return counterpartyId; }
     public void setCounterpartyId(Long counterpartyId) { this.counterpartyId = counterpartyId; }
 
-
     public DocType getDocType() { return docType; }
     public void setDocType(DocType docType) { this.docType = docType; }
 
+    public Long getMachineTypeId() { return machineTypeId; }
+    public void setMachineTypeId(Long machineTypeId) { this.machineTypeId = machineTypeId; }
 }

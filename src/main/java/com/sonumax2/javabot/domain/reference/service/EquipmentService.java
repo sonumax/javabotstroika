@@ -1,6 +1,5 @@
 package com.sonumax2.javabot.domain.reference.service;
 
-import com.sonumax2.javabot.domain.reference.Equipment;
 import com.sonumax2.javabot.domain.reference.repo.EquipmentRepository;
 import com.sonumax2.javabot.util.NameNormUtils;
 import org.springframework.stereotype.Service;

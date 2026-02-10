@@ -11,6 +11,7 @@ import java.time.LocalDate;
 public class FuelDraft extends OpDraftBase {
 
     public FuelKind fuelKind;
+    private Long machineTypeId;
 
     // equipment (транспорт/техника)
     public Long equipmentId;
@@ -31,4 +32,12 @@ public class FuelDraft extends OpDraftBase {
     // Telegram file_id (если фото одно)
     public String docFileId;
     public DocType docType = DocType.NO_RECEIPT;
+
+    public boolean isTransport() {
+        return fuelKind == FuelKind.TRANSPORT;
+    }
+
+    public boolean isMachine() {
+        return fuelKind == FuelKind.MACHINE;
+    }
 }

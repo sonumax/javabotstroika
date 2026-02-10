@@ -47,6 +47,10 @@ public class FuelService {
         op = operationRepo.save(op);
 
         FuelDetail detail = new FuelDetail();
+
+        detail.setEquipmentId(d.isTransport() ? detail.getEquipmentId() : null);
+        detail.setMachineTypeId(d.isMachine() ? detail.getMachineTypeId() : null);
+
         detail.setOperationId(op.getId());
         detail.setFuelKind(d.fuelKind);
         detail.setEquipmentId(d.equipmentId);

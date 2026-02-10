@@ -1,6 +1,5 @@
 package com.sonumax2.javabot.domain.reference.repo;
 
-import com.sonumax2.javabot.domain.reference.Equipment;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.ListCrudRepository;
 
