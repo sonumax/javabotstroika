@@ -24,7 +24,10 @@ public class SypDraft extends OpDraftBase {
     public PayType payType;
 
     // items (материал + объем)
-    public List<SypItem> items = new ArrayList<>();
+    public List<ExpenseLineItem> items = new ArrayList<>();
+    public Long pendingNomenclatureId;
+    public String pendingNomenclatureName;
+
 
     // common fields
     public BigDecimal amount;
@@ -34,10 +37,4 @@ public class SypDraft extends OpDraftBase {
     // Telegram file_id (если фото одно)
     public String docFileId;
     public DocType docType = DocType.NO_RECEIPT;
-
-    public static class SypItem {
-        public Long nomenclatureId;
-        public String pendingNomenclatureName;
-        public BigDecimal volume;
-    }
 }

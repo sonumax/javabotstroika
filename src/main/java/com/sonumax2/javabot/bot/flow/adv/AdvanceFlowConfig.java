@@ -72,14 +72,14 @@ public class AdvanceFlowConfig {
                         ctx -> {
                             var d = ctx.d;
                             String note = (d.note == null || d.note.isBlank())
-                                    ? ctx.ui.msg(ctx.chatId, "common.none")
+                                    ? ctx.ui().msg(ctx.chatId, "common.none")
                                     : d.note;
 
                             return ""
-                                    + ctx.ui.msg(ctx.chatId, "adv.confirm.title") + "\n"
-                                    + ctx.ui.msg(ctx.chatId, "adv.confirm.date", d.date) + "\n"
-                                    + ctx.ui.msg(ctx.chatId, "adv.confirm.amount", d.amount) + "\n"
-                                    + ctx.ui.msg(ctx.chatId, "adv.confirm.note", note);
+                                    + ctx.ui().msg(ctx.chatId, "adv.confirm.title") + "\n"
+                                    + ctx.ui().msg(ctx.chatId, "adv.confirm.date", d.date) + "\n"
+                                    + ctx.ui().msg(ctx.chatId, "adv.confirm.amount", d.amount) + "\n"
+                                    + ctx.ui().msg(ctx.chatId, "adv.confirm.note", note);
                         },
                         List.of(
                                 new ConfirmStep.EditBtn("btnEditDate", "date"),
@@ -99,22 +99,22 @@ public class AdvanceFlowConfig {
 
                             operationRepository.save(op);
 
-                            ctx.ui.panelKey(
+                            ctx.ui().panelKey(
                                     ctx.chatId,
                                     PanelMode.EDIT,
                                     "advance.saved",
-                                    ctx.keyboard.mainMenuInline(ctx.chatId),
-                                    ctx.session.displayName(ctx.chatId),
+                                    ctx.keyboard().mainMenuInline(ctx.chatId),
+                                    ctx.session().displayName(ctx.chatId),
                                     d.amount,
                                     d.date
                             );
                         },
                         ctx -> {
-                            ctx.ui.panelKey(
+                            ctx.ui().panelKey(
                                     ctx.chatId,
                                     PanelMode.EDIT,
                                     "cancelled",
-                                    ctx.keyboard.mainMenuInline(ctx.chatId)
+                                    ctx.keyboard().mainMenuInline(ctx.chatId)
                             );
                         }
                 ));

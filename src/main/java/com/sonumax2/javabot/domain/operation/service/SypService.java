@@ -1,5 +1,6 @@
 package com.sonumax2.javabot.domain.operation.service;
 
+import com.sonumax2.javabot.domain.draft.ExpenseLineItem;
 import com.sonumax2.javabot.domain.draft.SypDraft;
 import com.sonumax2.javabot.domain.operation.*;
 import com.sonumax2.javabot.domain.operation.repo.SypDetailRepository;
@@ -57,11 +58,8 @@ public class SypService {
         // items: сначала очистить (на случай редактирования/повторного save)
         itemRepo.deleteByOperationId(op.getId());
 
-        for (SypDraft.SypItem it : d.items) {
-            if (it == null) continue;
-            if (it.nomenclatureId == null) continue;
-            if (it.volume == null) continue;
-
+        for (ExpenseLineItem it : d.items) {
+            if (it == null || it.nomenclatureId == null || it.volume == null) continue;
             itemRepo.insertOne(op.getId(), it.nomenclatureId, it.volume);
         }
 

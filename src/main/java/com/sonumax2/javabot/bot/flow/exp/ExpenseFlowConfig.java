@@ -318,21 +318,21 @@ public class ExpenseFlowConfig {
                         d.docFileId
                 );
 
-                ctx.ui.panelKey(
+                ctx.ui().panelKey(
                         ctx.chatId,
                         PanelMode.EDIT,
                         "expense.saved",
-                        ctx.keyboard.mainMenuInline(ctx.chatId),
-                        ctx.session.displayName(ctx.chatId),
+                        ctx.keyboard().mainMenuInline(ctx.chatId),
+                        ctx.session().displayName(ctx.chatId),
                         d.amount,
                         d.date
                 );
             })
-            .allowCancel(ctx -> ctx.ui.panelKey(
+            .allowCancel(ctx -> ctx.ui().panelKey(
                     ctx.chatId,
                     PanelMode.EDIT,
                     "cancelled",
-                    ctx.keyboard.mainMenuInline(ctx.chatId)
+                    ctx.keyboard().mainMenuInline(ctx.chatId)
             )).build();
     }
 
@@ -346,7 +346,7 @@ public class ExpenseFlowConfig {
     ) {
         var d = ctx.d;
 
-        String none = ctx.ui.msg(ctx.chatId, "common.none");
+        String none = ctx.ui().msg(ctx.chatId, "common.none");
 
         String obj = workObjectService.findActiveById(d.objectId).map(WorkObject::getName).orElse(none);
         String item = nomenclatureService.findActiveById(d.nomenclatureId).map(Nomenclature::getName).orElse(none);
@@ -357,15 +357,15 @@ public class ExpenseFlowConfig {
         String note = (d.note == null || d.note.isBlank()) ? none : d.note;
 
         String docLabel = switch (d.docType == null ? DocType.NO_RECEIPT : d.docType) {
-            case RECEIPT -> ctx.ui.msg(ctx.chatId, "expense.doc.receipt");
-            case INVOICE -> ctx.ui.msg(ctx.chatId, "expense.doc.invoice");
-            case NO_RECEIPT -> ctx.ui.msg(ctx.chatId, "expense.doc.none");
+            case RECEIPT -> ctx.ui().msg(ctx.chatId, "expense.doc.receipt");
+            case INVOICE -> ctx.ui().msg(ctx.chatId, "expense.doc.invoice");
+            case NO_RECEIPT -> ctx.ui().msg(ctx.chatId, "expense.doc.none");
         };
 
         String fileMark = "";
         DocType dt = (d.docType == null ? DocType.NO_RECEIPT : d.docType);
         if (dt.needsFile()) {
-            fileMark = " " + ctx.ui.msg(
+            fileMark = " " + ctx.ui().msg(
                     ctx.chatId,
                     (d.docFileId != null && !d.docFileId.isBlank()) ? "expense.doc.file.ok" : "expense.doc.file.miss"
             );
@@ -373,7 +373,7 @@ public class ExpenseFlowConfig {
 
         String doc = docLabel + fileMark;
 
-        return ctx.ui.msg(
+        return ctx.ui().msg(
                 ctx.chatId,
                 "expense.confirm",
                 obj,

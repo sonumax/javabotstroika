@@ -130,15 +130,14 @@ public class NomenclatureService {
         return ordered;
     }
 
-    public List<Nomenclature> suggestForSyp(long chatId, int limit) {
-        // простой вариант: просто listActiveForSyp
-        return repo.listActiveForSyp(limit);
-    }
-
     public List<Nomenclature> searchForSyp(String raw, int limit) {
         String norm = NameNormUtils.normalizeNorm(raw);
         if (norm.isBlank()) return List.of();
         return repo.searchActiveForSyp(norm, limit);
+    }
+
+    public List<Nomenclature> listActiveForSyp(int limit) {
+        return repo.listActiveForSyp(limit);
     }
 
     public void setSypUsage(long nomId, boolean enabled) {
