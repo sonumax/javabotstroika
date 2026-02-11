@@ -11,11 +11,13 @@ import java.time.LocalDate;
 public class FuelDraft extends OpDraftBase {
 
     public FuelKind fuelKind;
-    private Long machineTypeId;
 
-    // equipment (транспорт/техника)
     public Long equipmentId;
     public String pendingEquipmentName;
+
+    /** Для ветки MACHINE: выбранный тип механизма из справочника fuel_machine_type */
+    public Long machineTypeId;
+    public String pendingMachineTypeName;
 
     // counterparty
     public Long counterpartyId;

@@ -42,18 +42,21 @@ public class FuelService {
         op.setOpDate(d.date);
         op.setNote(d.note);
 
-        op.setPhotoFileId(dt == DocType.NO_RECEIPT ? null : d.docFileId);
+        // фото опционально даже при RECEIPT/INVOICE
+        op.setPhotoFileId(dt.needsFile() ? d.docFileId : null);
 
         op = operationRepo.save(op);
 
         FuelDetail detail = new FuelDetail();
-
-        detail.setEquipmentId(d.isTransport() ? detail.getEquipmentId() : null);
-        detail.setMachineTypeId(d.isMachine() ? detail.getMachineTypeId() : null);
-
         detail.setOperationId(op.getId());
         detail.setFuelKind(d.fuelKind);
+
+        // сейчас equipmentId может быть null (в проекте ещё нет справочника техники)
         detail.setEquipmentId(d.equipmentId);
+
+        // MACHINE: обязателен machineTypeId, TRANSPORT: null
+        detail.setMachineTypeId(d.isMachine() ? d.machineTypeId : null);
+
         detail.setCounterpartyId(d.counterpartyId);
         detail.setVolume(d.volume);
         detail.setDocType(dt);
@@ -65,7 +68,7 @@ public class FuelService {
 
     private void validate(FuelDraft d) {
         if (d.fuelKind == null) throw new IllegalArgumentException("fuelKind is required");
-        if (d.equipmentId == null) throw new IllegalArgumentException("equipment is required");
+        if (d.isMachine() && d.machineTypeId == null) throw new IllegalArgumentException("machineTypeId is required");
         if (d.counterpartyId == null) throw new IllegalArgumentException("counterparty is required");
         if (d.volume == null) throw new IllegalArgumentException("volume is required");
         if (d.amount == null) throw new IllegalArgumentException("amount is required");

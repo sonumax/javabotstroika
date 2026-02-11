@@ -57,6 +57,6 @@ public class AddOperationCommand implements Command {
 
     @Override
     public String getCommand() {
-       return CommandName.ADD_OPERATION.getName();
+        return CommandName.ADD_OPERATION.getName();
     }
 }

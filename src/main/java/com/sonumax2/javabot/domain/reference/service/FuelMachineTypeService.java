@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class FuelMachineTypeService {
@@ -21,9 +22,30 @@ public class FuelMachineTypeService {
         return repo.findActive(chatId);
     }
 
-    public List<FuelMachineType> search(long chatId, String query) {
+    public Optional<FuelMachineType> findExact(long chatId, String text) {
+        String norm = NameNormUtils.normalizeNorm(text);
+        if (norm.isBlank()) return Optional.empty();
+        return repo.findByNorm(chatId, norm);
+    }
+
+    public List<FuelMachineType> search(long chatId, String query, int limit) {
         String norm = NameNormUtils.normalizeNorm(query);
-        return repo.search(chatId, "%" + norm + "%");
+        if (norm.isBlank()) return List.of();
+        List<FuelMachineType> found = repo.search(chatId, "%" + norm + "%");
+        if (limit <= 0 || found.size() <= limit) return found;
+        return found.subList(0, limit);
+    }
+
+    public Optional<String> findName(long chatId, Long id) {
+        if (id == null) return Optional.empty();
+        return repo.findById(id)
+                .filter(FuelMachineType::isActive)
+                .filter(x -> x.getChatId() != null && x.getChatId() == chatId)
+                .map(FuelMachineType::getName);
+    }
+
+    public List<FuelMachineType> search(long chatId, String query) {
+        return search(chatId, query, 20);
     }
 
     public FuelMachineType getOrCreate(long chatId, String name) {
