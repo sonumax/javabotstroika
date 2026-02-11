@@ -51,9 +51,6 @@ public class FuelService {
         detail.setOperationId(op.getId());
         detail.setFuelKind(d.fuelKind);
 
-        // сейчас equipmentId может быть null (в проекте ещё нет справочника техники)
-        detail.setEquipmentId(d.equipmentId);
-
         // MACHINE: обязателен machineTypeId, TRANSPORT: null
         detail.setMachineTypeId(d.isMachine() ? d.machineTypeId : null);
 

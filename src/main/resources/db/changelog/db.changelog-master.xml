@@ -6,18 +6,7 @@
           http://www.liquibase.org/xml/ns/dbchangelog
           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <include file="001-init.xml" relativeToChangelogFile="true"/>
-    <include file="002-alter-user-session-user-state.xml" relativeToChangelogFile="true"/>
-    <include file="003-expense-receipt-type.xml" relativeToChangelogFile="true"/>
-    <include file="004-add-user-session-panel-message-id.xml" relativeToChangelogFile="true"/>
-    <include file="005-add-user-session-active-flow.xml" relativeToChangelogFile="true"/>
-    <include file="006-ref-search-trgm-indexes.xml" relativeToChangelogFile="true"/>
-    <include file="007-add-user-session-timezone.xml" relativeToChangelogFile="true"/>
-    <include file="008-receipt-type-default-no-receipt.xml" relativeToChangelogFile="true"/>
-    <include file="009-nomenclature-usage.xml" relativeToChangelogFile="true"/>
-    <include file="010-syp.xml" relativeToChangelogFile="true"/>
-    <include file="011-fuel.xml" relativeToChangelogFile="true"/>
-    <include file="012-add-receipt-type.xml" relativeToChangelogFile="true"/>
-    <include file="013-fuel-machine-type.xml" relativeToChangelogFile="true"/>
+    <!-- Squashed schema: intended for fresh DB creation -->
+    <include file="001-init-squashed.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

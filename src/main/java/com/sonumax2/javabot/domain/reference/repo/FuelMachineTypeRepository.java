@@ -2,38 +2,43 @@ package com.sonumax2.javabot.domain.reference.repo;
 
 import com.sonumax2.javabot.domain.reference.FuelMachineType;
 import org.springframework.data.jdbc.repository.query.Query;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.ListCrudRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface FuelMachineTypeRepository extends CrudRepository<FuelMachineType, Long> {
+public interface FuelMachineTypeRepository extends ListCrudRepository<FuelMachineType, Long> {
+
+    List<FuelMachineType> findByActiveTrueOrderByNameAsc();
+    Optional<FuelMachineType> findFirstByActiveTrueAndNameNorm(String nameNorm);
+    Optional<FuelMachineType> findTop1ByNameNormOrderByIdDesc(String nameNorm);
 
     @Query("""
         select *
         from fuel_machine_type
-        where chat_id = :chatId
-          and is_active = true
-        order by sort_order, name
+        where is_active = true
+        order by name asc
+        limit :limit
     """)
-    List<FuelMachineType> findActive(long chatId);
+    List<FuelMachineType> activeList(int limit);
 
     @Query("""
         select *
         from fuel_machine_type
-        where chat_id = :chatId
-          and name_norm = :nameNorm
-        limit 1
+        where is_active = true
+          and name_norm like concat('%', :q, '%')
+        order by name asc
+        limit :limit
     """)
-    Optional<FuelMachineType> findByNorm(long chatId, String nameNorm);
+    List<FuelMachineType> searchActiveByName(String q, int limit);
 
     @Query("""
         select *
         from fuel_machine_type
-        where chat_id = :chatId
-          and name_norm like :pattern
-        order by sort_order, name
-        limit 20
+        where is_active = true
+          and created_by_chat_id = :chatId
+        order by created_at desc
+        limit :limit
     """)
-    List<FuelMachineType> search(long chatId, String pattern);
+    List<FuelMachineType> recentCreatedByChat(Long chatId, int limit);
 }

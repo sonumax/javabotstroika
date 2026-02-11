@@ -12,9 +12,6 @@ public class FuelDraft extends OpDraftBase {
 
     public FuelKind fuelKind;
 
-    public Long equipmentId;
-    public String pendingEquipmentName;
-
     /** Для ветки MACHINE: выбранный тип механизма из справочника fuel_machine_type */
     public Long machineTypeId;
     public String pendingMachineTypeName;
