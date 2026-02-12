@@ -13,8 +13,8 @@ public class FuelDetail {
     @Id
     @Column("operation_id") private Long operationId;
     @Column("fuel_kind") private FuelKind fuelKind; // "TRANSPORT" / "MACHINE"
+    @Column("object_id") private Long objectId;
     @Column("machine_type_id") private Long machineTypeId;
-    @Column("equipment_id") private Long equipmentId;
     @Column("counterparty_id") private Long counterpartyId;
     @Column("volume") private BigDecimal volume;
     @Column("receipt_type") private DocType docType = DocType.NO_RECEIPT;
@@ -25,8 +25,8 @@ public class FuelDetail {
     public FuelKind getFuelKind() { return fuelKind; }
     public void setFuelKind(FuelKind fuelKind) { this.fuelKind = fuelKind; }
 
-    public Long getEquipmentId() { return equipmentId; }
-    public void setEquipmentId(Long equipmentId) { this.equipmentId = equipmentId; }
+    public Long getObjectId() { return objectId; }
+    public void setObjectId(Long objectId) { this.objectId = objectId; }
 
     public BigDecimal getVolume() { return volume; }
     public void setVolume(BigDecimal volume) { this.volume = volume; }

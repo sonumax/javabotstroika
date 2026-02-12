@@ -16,8 +16,10 @@ import com.sonumax2.javabot.domain.operation.service.FuelService;
 import com.sonumax2.javabot.domain.reference.Counterparty;
 import com.sonumax2.javabot.domain.reference.CounterpartyKind;
 import com.sonumax2.javabot.domain.reference.FuelMachineType;
+import com.sonumax2.javabot.domain.reference.WorkObject;
 import com.sonumax2.javabot.domain.reference.service.CounterpartyService;
 import com.sonumax2.javabot.domain.reference.service.FuelMachineTypeService;
+import com.sonumax2.javabot.domain.reference.service.WorkObjectService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,6 +36,9 @@ public class FuelFlowConfig {
 
     private static final String S_MT = "mtype";
     private static final String S_MT_SEARCH = "mtype_search";
+
+    private static final String S_OBJ = "obj";
+    private static final String S_OBJ_SEARCH = "obj_search";
 
     private static final String S_DATE = "date";
 
@@ -52,6 +57,7 @@ public class FuelFlowConfig {
     @Bean
     public FlowDefinition<FuelDraft> fuelFlow(
             FuelMachineTypeService fuelMachineTypeService,
+            WorkObjectService workObjectService,
             CounterpartyService counterpartyService,
             FuelService fuelService
     ) {
@@ -71,6 +77,10 @@ public class FuelFlowConfig {
                 .addStep(stepMachineTypeTop(fuelMachineTypeService))
                 .addStep(stepMachineTypeSearch(fuelMachineTypeService))
 
+                // -------- WORK OBJECT --------
+                .addStep(stepObject(workObjectService))
+                .addStep(stepObjectSearch(workObjectService))
+
                 // -------- DATE / COUNTERPARTY / VOLUME / AMOUNT --------
                 .addStep(stepDate())
                 .addStep(stepCounterparty(counterpartyService))
@@ -86,7 +96,7 @@ public class FuelFlowConfig {
                 .addStep(stepDocFile())
 
                 // -------- CONFIRM --------
-                .addStep(stepConfirm(fuelMachineTypeService, counterpartyService, fuelService));
+                .addStep(stepConfirm(workObjectService, fuelMachineTypeService, counterpartyService, fuelService));
     }
 
     // -------------------- steps --------------------
@@ -103,7 +113,7 @@ public class FuelFlowConfig {
                     if (v != FuelKind.MACHINE) d.machineTypeId = null;
                 },
                 "@opsMenu",
-                S_DATE // будет подменено в onCallback
+                S_OBJ // placeholder
         ) {
             @Override
             public StepMove onCallback(FlowContext<FuelDraft> ctx, String data, PanelMode mode) {
@@ -122,7 +132,8 @@ public class FuelFlowConfig {
                         ctx.d.fuelKind = val;
                         if (val != FuelKind.MACHINE) ctx.d.machineTypeId = null;
 
-                        return FlowNav.goOrConfirm(ctx, (val == FuelKind.MACHINE) ? S_MT : S_DATE);
+                        // MACHINE -> сначала тип техники, потом объект
+                        return FlowNav.goOrConfirm(ctx, val == FuelKind.MACHINE ? S_MT : S_OBJ);
                     } catch (Exception ignore) {
                         this.show(ctx, mode);
                         return StepMove.rendered();
@@ -140,11 +151,11 @@ public class FuelFlowConfig {
         return SelectFromTopStep.<FuelDraft, FuelMachineType>builder()
                 .id(S_MT)
                 .askKey("fuel.machineType.ask")
-                .options(ctx -> limit(fuelMachineTypeService.listActive(ctx.chatId), 8))
+                .options(ctx -> limit(fuelMachineTypeService.suggestByChat(ctx.chatId, 8), 8))
                 .bind(d -> d.machineTypeId, (d, v) -> d.machineTypeId = v)
                 .onTextSaveTo((d, txt) -> d.pendingMachineTypeName = txt)
                 .backTo(S_KIND)
-                .nextTo(S_DATE)
+                .nextTo(S_OBJ)
                 .allowSkip(false)
                 .textGoesTo(S_MT_SEARCH)
                 .build();
@@ -158,10 +169,53 @@ public class FuelFlowConfig {
                 .askKey("fuel.machineType.search")
                 .pending(d -> d.pendingMachineTypeName, (d, v) -> d.pendingMachineTypeName = v)
                 .saveIdTo((d, v) -> d.machineTypeId = v)
-                .exact((ctx, text) -> fuelMachineTypeService.findExact(ctx.chatId, text))
-                .search((ctx, text, lim) -> fuelMachineTypeService.search(ctx.chatId, text, lim))
-                .create((ctx, text) -> fuelMachineTypeService.getOrCreate(ctx.chatId, text).getId())
+                .exact((ctx, text) -> fuelMachineTypeService.findExact(text))
+                .search((ctx, text, lim) -> fuelMachineTypeService.search(text, lim))
+                .create((ctx, text) -> fuelMachineTypeService.getOrCreate(text, ctx.chatId).getId())
                 .backTo(S_MT)
+                .nextTo(S_OBJ)
+                .limit(8)
+                .build();
+    }
+
+    private static SelectFromTopStep<FuelDraft, WorkObject> stepObject(WorkObjectService workObjectService) {
+        // prevStepId зависит от ветки: MACHINE -> mtype, TRANSPORT -> kind
+        return new SelectFromTopStep<>(
+                S_OBJ,
+                "fuel.askObject",
+                ctx -> workObjectService.suggestByChat(ctx.chatId, 8),
+                d -> d.objectId,
+                (d, v) -> d.objectId = v,
+                (d, txt) -> d.pendingObjectName = txt,
+                S_KIND, // placeholder (back обрабатываем вручную ниже)
+                S_DATE,
+                false,
+                S_OBJ_SEARCH
+        ) {
+            @Override
+            public StepMove onCallback(FlowContext<FuelDraft> ctx, String data, PanelMode mode) {
+                if (FlowCb.is(data, ctx.def.ns, id(), "back")) {
+                    StepMove m = FlowNav.confirmIfNeeded(ctx);
+                    if (m != null) return m;
+                    return StepMove.go(ctx.d.isMachine() ? S_MT : S_KIND);
+                }
+                return super.onCallback(ctx, data, mode);
+            }
+        };
+    }
+
+    private static SearchPickOrCreateRefStep<FuelDraft, WorkObject> stepObjectSearch(
+            WorkObjectService workObjectService
+    ) {
+        return SearchPickOrCreateRefStep.<FuelDraft, WorkObject>builder()
+                .id(S_OBJ_SEARCH)
+                .askKey("fuel.object.search")
+                .pending(d -> d.pendingObjectName, (d, v) -> d.pendingObjectName = v)
+                .saveIdTo((d, v) -> d.objectId = v)
+                .exact((ctx, text) -> workObjectService.findExact(text))
+                .search((ctx, text, lim) -> workObjectService.search(text, lim))
+                .create((ctx, text) -> workObjectService.getOrCreate(text, ctx.chatId).getId())
+                .backTo(S_OBJ)
                 .nextTo(S_DATE)
                 .limit(8)
                 .build();
@@ -173,7 +227,7 @@ public class FuelFlowConfig {
                 "fuel.askDate",
                 d -> d.date,
                 (d, v) -> d.date = v,
-                S_KIND, // будет подменено
+                S_OBJ,
                 S_CP
         ) {
             @Override
@@ -181,7 +235,7 @@ public class FuelFlowConfig {
                 if (FlowCb.is(data, ctx.def.ns, id(), "back")) {
                     StepMove m = FlowNav.confirmIfNeeded(ctx);
                     if (m != null) return m;
-                    return StepMove.go(ctx.d.isMachine() ? S_MT : S_KIND);
+                    return StepMove.go(S_OBJ);
                 }
                 return super.onCallback(ctx, data, mode);
             }
@@ -255,7 +309,7 @@ public class FuelFlowConfig {
                 S_AMOUNT,
                 S_DOC,
                 true,
-                S_CONFIRM,
+                S_DOC,
                 s -> null
         );
     }
@@ -288,17 +342,19 @@ public class FuelFlowConfig {
     }
 
     private static ConfirmStep<FuelDraft> stepConfirm(
+            WorkObjectService workObjectService,
             FuelMachineTypeService fuelMachineTypeService,
             CounterpartyService counterpartyService,
             FuelService fuelService
     ) {
         return ConfirmStep.<FuelDraft>builder()
                 .id(S_CONFIRM)
-                .render(ctx -> renderConfirm(ctx, fuelMachineTypeService, counterpartyService))
+                .render(ctx -> renderConfirm(ctx, workObjectService, fuelMachineTypeService, counterpartyService))
                 .editsProvider(ctx -> {
                     List<ConfirmStep.EditBtn> b = new ArrayList<>();
                     b.add(new ConfirmStep.EditBtn("btnEditFuelKind", S_KIND));
                     if (ctx.d.isMachine()) b.add(new ConfirmStep.EditBtn("btnEditMachineType", S_MT));
+                    b.add(new ConfirmStep.EditBtn("btnEditObject", S_OBJ));
                     b.add(new ConfirmStep.EditBtn("btnEditDate", S_DATE));
                     b.add(new ConfirmStep.EditBtn("btnEditCp", S_CP));
                     b.add(new ConfirmStep.EditBtn("btnEditVolume", S_VOLUME));
@@ -337,6 +393,7 @@ public class FuelFlowConfig {
 
     private static String renderConfirm(
             FlowContext<FuelDraft> ctx,
+            WorkObjectService workObjectService,
             FuelMachineTypeService fuelMachineTypeService,
             CounterpartyService counterpartyService
     ) {
@@ -350,8 +407,12 @@ public class FuelFlowConfig {
 
         String mt = none;
         if (d.isMachine() && d.machineTypeId != null) {
-            mt = fuelMachineTypeService.findName(ctx.chatId, d.machineTypeId).orElse(none);
+            mt = fuelMachineTypeService.findName(d.machineTypeId).orElse(none);
         }
+
+        String obj = workObjectService.findActiveById(d.objectId)
+                .map(WorkObject::getName)
+                .orElse(none);
 
         String cp = counterpartyService.findActiveById(d.counterpartyId)
                 .map(Counterparty::getName)
@@ -382,6 +443,7 @@ public class FuelFlowConfig {
         if (d.isMachine()) {
             sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.machineType", mt));
         }
+        sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.object", obj));
         sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.date", d.date));
         sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.cp", cp));
         sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.volume", d.volume));

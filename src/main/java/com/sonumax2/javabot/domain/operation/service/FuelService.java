@@ -50,6 +50,7 @@ public class FuelService {
         FuelDetail detail = new FuelDetail();
         detail.setOperationId(op.getId());
         detail.setFuelKind(d.fuelKind);
+        detail.setObjectId(d.objectId);
 
         // MACHINE: обязателен machineTypeId, TRANSPORT: null
         detail.setMachineTypeId(d.isMachine() ? d.machineTypeId : null);
@@ -66,6 +67,7 @@ public class FuelService {
     private void validate(FuelDraft d) {
         if (d.fuelKind == null) throw new IllegalArgumentException("fuelKind is required");
         if (d.isMachine() && d.machineTypeId == null) throw new IllegalArgumentException("machineTypeId is required");
+        if (d.objectId == null) throw new IllegalArgumentException("object is required");
         if (d.counterpartyId == null) throw new IllegalArgumentException("counterparty is required");
         if (d.volume == null) throw new IllegalArgumentException("volume is required");
         if (d.amount == null) throw new IllegalArgumentException("amount is required");
