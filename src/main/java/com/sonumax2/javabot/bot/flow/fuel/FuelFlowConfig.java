@@ -2,10 +2,7 @@ package com.sonumax2.javabot.bot.flow.fuel;
 
 import com.sonumax2.javabot.bot.commands.cb.Cb;
 import com.sonumax2.javabot.bot.commands.cb.CbParts;
-import com.sonumax2.javabot.bot.flow.FlowContext;
-import com.sonumax2.javabot.bot.flow.FlowDefinition;
-import com.sonumax2.javabot.bot.flow.FlowNav;
-import com.sonumax2.javabot.bot.flow.StepMove;
+import com.sonumax2.javabot.bot.flow.*;
 import com.sonumax2.javabot.bot.flow.steps.*;
 import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.DraftType;
@@ -370,22 +367,12 @@ public class FuelFlowConfig {
                     b.add(new ConfirmStep.EditBtn("btnEditNote", S_NOTE));
                     return b;
                 })
-                .allowSave(ctx -> {
-                    long id = fuelService.save(ctx.d, ctx.chatId);
-                    ctx.ui().panelKey(
-                            ctx.chatId,
-                            PanelMode.EDIT,
-                            "fuel.saved",
-                            ctx.keyboard().mainMenuInline(ctx.chatId),
-                            id
-                    );
-                })
-                .allowCancel(ctx -> ctx.ui().panelKey(
-                        ctx.chatId,
-                        PanelMode.EDIT,
-                        "cancelled",
-                        ctx.keyboard().mainMenuInline(ctx.chatId)
-                ))
+                .allowSave(ctx ->
+                        ConfirmSupport.saveAndShowMain(ctx, fuelService, "fuel.saved")
+                )
+                .allowCancel(ctx ->
+                        ConfirmSupport.cancelAndShowMain(ctx, "cancelled")
+                )
                 .build();
     }
 

@@ -9,16 +9,15 @@ import java.math.BigDecimal;
 @Table("syp_item")
 public class SypItem {
 
-    @Id
-    @Column("id")
-    public Long id;
+    @Id private Long id;
+    @Column("nomenclature_id") private Long nomenclatureId;
+    @Column("volume") private BigDecimal volume;
 
-    @Column("operation_id")
-    public Long operationId;
+    public Long getId() { return id; }
 
-    @Column("nomenclature_id")
-    public Long nomenclatureId;
+    public Long getNomenclatureId() { return nomenclatureId; }
+    public void setNomenclatureId(Long nomenclatureId) { this.nomenclatureId = nomenclatureId; }
 
-    @Column("volume")
-    public BigDecimal volume;
+    public BigDecimal getVolume() { return volume; }
+    public void setVolume(BigDecimal volume) { this.volume = volume; }
 }

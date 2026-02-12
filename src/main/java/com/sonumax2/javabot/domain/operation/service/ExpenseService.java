@@ -69,7 +69,6 @@ public class ExpenseService {
         op.setAmount(amount);
         op.setNote(note);
         op.setPhotoFileId(dt == DocType.NO_RECEIPT ? null : photoFileId);
-        op.setCreatedAt(LocalDateTime.now());
         operationRepository.save(op);
 
         // 2) сохраняем detail (upsert)

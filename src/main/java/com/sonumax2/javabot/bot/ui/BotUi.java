@@ -14,11 +14,13 @@ public class BotUi {
     private final BotMessageService bot;
     private final LocalizationService localeMessage;
     private final UserSessionService userSessionService;
+    private final KeyboardService keyboardService;
 
-    public BotUi(BotMessageService bot, LocalizationService localeMessage, UserSessionService userSessionService) {
+    public BotUi(BotMessageService bot, LocalizationService localeMessage, UserSessionService userSessionService, KeyboardService keyboardService) {
         this.bot = bot;
         this.localeMessage = localeMessage;
         this.userSessionService = userSessionService;
+        this.keyboardService = keyboardService;
     }
 
     // -------- localization --------
@@ -173,5 +175,29 @@ public class BotUi {
 
         if (kb != null) b.replyMarkup(kb);
         return b.build();
+    }
+
+    public void showSaved(
+            long chatId,
+            PanelMode mode,
+            String messageKey,
+            long operationId
+    ) {
+        panelKey(
+                chatId,
+                mode,
+                messageKey,
+                keyboardService.mainMenuInline(chatId),
+                operationId
+        );
+    }
+
+    public void showCancelled(long chatId, PanelMode mode, String messageKey) {
+        panelKey(
+                chatId,
+                mode,
+                messageKey,
+                keyboardService.mainMenuInline(chatId)
+        );
     }
 }

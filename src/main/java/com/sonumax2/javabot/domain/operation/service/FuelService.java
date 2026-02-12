@@ -1,61 +1,22 @@
 package com.sonumax2.javabot.domain.operation.service;
 
 import com.sonumax2.javabot.domain.draft.FuelDraft;
-import com.sonumax2.javabot.domain.draft.FuelKind;
 import com.sonumax2.javabot.domain.operation.*;
 import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
-
 @Service
-public class FuelService {
+public class FuelService implements OperationSaver<FuelDraft> {
 
     private final OperationRepository operationRepo;
 
-    public FuelService(OperationRepository operationRepo) {
-        this.operationRepo = operationRepo;
-    }
+    public FuelService(OperationRepository operationRepo) { this.operationRepo = operationRepo; }
 
     @Transactional
     public long save(FuelDraft d, long chatId) {
-        Objects.requireNonNull(d, "draft");
-        validate(d);
-
-        DocType dt = (d.docType == null) ? DocType.NO_RECEIPT : d.docType;
-
-        OperationType opType = (d.fuelKind == FuelKind.MACHINE)
-                ? OperationType.FUEL_MACHINE
-                : OperationType.FUEL_TRANSPORT;
-
-        Operation op = new Operation();
-        op.setCreatedAt(LocalDateTime.now());
+        Operation op = OperationFactory.fromFuel(d);
         op.setChatId(chatId);
-        op.setOpType(opType);
-
-        op.setAmount(d.amount);
-        op.setOpDate(d.date);
-        op.setNote(d.note);
-
-        // фото опционально даже при RECEIPT/INVOICE
-        op.setPhotoFileId(dt.needsFile() ? d.docFileId : null);
-
-        FuelDetail detail = new FuelDetail();
-        detail.setFuelKind(d.fuelKind);
-        detail.setObjectId(d.objectId);
-
-        // MACHINE: обязателен machineTypeId, TRANSPORT: null
-        detail.setMachineTypeId(d.isMachine() ? d.machineTypeId : null);
-
-        detail.setCounterpartyId(d.counterpartyId);
-        detail.setVolume(d.volume);
-        detail.setDocType(dt);
-
-        op.getFuelDetails().clear();
-        op.getFuelDetails().add(detail);
-
         op = operationRepo.save(op);
         return op.getId();
     }

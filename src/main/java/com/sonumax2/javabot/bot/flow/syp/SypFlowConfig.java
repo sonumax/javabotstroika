@@ -2,6 +2,7 @@ package com.sonumax2.javabot.bot.flow.syp;
 
 import com.sonumax2.javabot.bot.commands.cb.Cb;
 import com.sonumax2.javabot.bot.commands.cb.CbParts;
+import com.sonumax2.javabot.bot.flow.ConfirmSupport;
 import com.sonumax2.javabot.bot.flow.FlowContext;
 import com.sonumax2.javabot.bot.flow.FlowDefinition;
 import com.sonumax2.javabot.bot.flow.steps.*;
@@ -333,25 +334,12 @@ public class SypFlowConfig {
                     }
                     return b;
                 })
-                .allowSave(ctx -> {
-                    sypService.save(ctx.d, ctx.chatId);
-
-                    ctx.ui().panelKey(
-                            ctx.chatId,
-                            PanelMode.EDIT,
-                            "syp.saved",
-                            ctx.keyboard().mainMenuInline(ctx.chatId),
-                            ctx.session().displayName(ctx.chatId),
-                            ctx.d.amount,
-                            ctx.d.date
-                    );
-                })
-                .allowCancel(ctx -> ctx.ui().panelKey(
-                        ctx.chatId,
-                        PanelMode.EDIT,
-                        "cancelled",
-                        ctx.keyboard().mainMenuInline(ctx.chatId)
-                ))
+                .allowSave(ctx ->
+                        ConfirmSupport.saveAndShowMain(ctx, sypService, "syp.saved")
+                )
+                .allowCancel(ctx ->
+                        ConfirmSupport.cancelAndShowMain(ctx, "cancelled")
+                )
                 .build();
     }
 

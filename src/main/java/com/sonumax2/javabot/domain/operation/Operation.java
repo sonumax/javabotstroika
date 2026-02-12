@@ -8,6 +8,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,6 +36,9 @@ public class Operation {
 
     @MappedCollection(idColumn = "operation_id")
     private Set<SypDetail> sypDetails = new HashSet<>();
+
+    @MappedCollection(idColumn="operation_id")
+    private Set<SypItem> sypItems = new HashSet<>();
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -81,9 +85,37 @@ public class Operation {
     public String getPhotoFileId() { return photoFileId; }
     public void setPhotoFileId(String photoFileId) { this.photoFileId = photoFileId; }
 
-    public Set<FuelDetail> getFuelDetails() { return fuelDetails; }
-    public void setFuelDetails(Set<FuelDetail> fuelDetails) { this.fuelDetails = fuelDetails; }
+    public void setFuelDetail(FuelDetail d) {
+        fuelDetails.clear();
+        if (d != null) fuelDetails.add(d);
+        // enforce single detail type per operation
+        sypDetails.clear();
+    }
 
-    public Set<SypDetail> getSypDetails() { return sypDetails; }
-    public void setSypDetails(Set<SypDetail> sypDetails) { this.sypDetails = sypDetails; }
+    public void setSypDetail(SypDetail d) {
+        sypDetails.clear();
+        if (d != null) sypDetails.add(d);
+        // enforce single detail type per operation
+        fuelDetails.clear();
+    }
+
+    public void replaceSypItems(Collection<SypItem> items) {
+        this.sypItems.clear();
+        if (items != null) {
+            this.sypItems.addAll(items);
+        }
+    }
+
+    public FuelDetail getFuelDetailOrNull() {
+        return fuelDetails.isEmpty() ? null : fuelDetails.iterator().next();
+    }
+
+    public SypDetail getSypDetailOrNull() {
+        return sypDetails.isEmpty() ? null : sypDetails.iterator().next();
+    }
+
+    public Set<SypItem> getSypItems() {
+        return sypItems;
+    }
+
 }
