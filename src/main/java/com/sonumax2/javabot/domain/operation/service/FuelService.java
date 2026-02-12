@@ -3,7 +3,6 @@ package com.sonumax2.javabot.domain.operation.service;
 import com.sonumax2.javabot.domain.draft.FuelDraft;
 import com.sonumax2.javabot.domain.draft.FuelKind;
 import com.sonumax2.javabot.domain.operation.*;
-import com.sonumax2.javabot.domain.operation.repo.FuelDetailRepository;
 import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,11 +14,9 @@ import java.util.Objects;
 public class FuelService {
 
     private final OperationRepository operationRepo;
-    private final FuelDetailRepository detailRepo;
 
-    public FuelService(OperationRepository operationRepo, FuelDetailRepository detailRepo) {
+    public FuelService(OperationRepository operationRepo) {
         this.operationRepo = operationRepo;
-        this.detailRepo = detailRepo;
     }
 
     @Transactional
@@ -45,10 +42,7 @@ public class FuelService {
         // фото опционально даже при RECEIPT/INVOICE
         op.setPhotoFileId(dt.needsFile() ? d.docFileId : null);
 
-        op = operationRepo.save(op);
-
         FuelDetail detail = new FuelDetail();
-        detail.setOperationId(op.getId());
         detail.setFuelKind(d.fuelKind);
         detail.setObjectId(d.objectId);
 
@@ -59,8 +53,10 @@ public class FuelService {
         detail.setVolume(d.volume);
         detail.setDocType(dt);
 
-        detailRepo.save(detail);
+        op.getFuelDetails().clear();
+        op.getFuelDetails().add(detail);
 
+        op = operationRepo.save(op);
         return op.getId();
     }
 

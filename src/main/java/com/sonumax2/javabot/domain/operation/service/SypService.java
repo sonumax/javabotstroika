@@ -3,7 +3,6 @@ package com.sonumax2.javabot.domain.operation.service;
 import com.sonumax2.javabot.domain.draft.ExpenseLineItem;
 import com.sonumax2.javabot.domain.draft.SypDraft;
 import com.sonumax2.javabot.domain.operation.*;
-import com.sonumax2.javabot.domain.operation.repo.SypDetailRepository;
 import com.sonumax2.javabot.domain.operation.repo.SypItemRepository;
 import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
 import com.sonumax2.javabot.domain.reference.service.NomenclatureService;
@@ -19,15 +18,13 @@ import java.util.stream.Collectors;
 public class SypService {
 
     private final OperationRepository operationRepo;
-    private final SypDetailRepository detailRepo;
     private final SypItemRepository itemRepo;
     private final NomenclatureService nomenclatureService;
 
     public SypService(OperationRepository operationRepo,
-                      SypDetailRepository detailRepo,
-                      SypItemRepository itemRepo, NomenclatureService nomenclatureService) {
+                      SypItemRepository itemRepo,
+                      NomenclatureService nomenclatureService) {
         this.operationRepo = operationRepo;
-        this.detailRepo = detailRepo;
         this.itemRepo = itemRepo;
         this.nomenclatureService = nomenclatureService;
     }
@@ -51,15 +48,16 @@ public class SypService {
         // фото хранится в operation
         op.setPhotoFileId(dt == DocType.NO_RECEIPT ? null : d.docFileId);
 
-        op = operationRepo.save(op);
+        SypDetail sypDetail = new SypDetail();
+        sypDetail.setWorkObjectId(d.objectId);
+        sypDetail.setCounterpartyId(d.counterpartyId);
+        sypDetail.setPayType(d.payType);
+        sypDetail.setDocType(dt);
 
-        detailRepo.insertOne(
-                op.getId(),
-                d.objectId,
-                d.counterpartyId,
-                d.payType.name(),
-                dt.name()
-        );
+        op.getSypDetails().clear();
+        op.getSypDetails().add(sypDetail);
+
+        op = operationRepo.save(op);
 
         // items: сначала очистить (на случай редактирования/повторного save)
         itemRepo.deleteByOperationId(op.getId());

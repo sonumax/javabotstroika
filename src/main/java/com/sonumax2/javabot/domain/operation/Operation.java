@@ -2,11 +2,14 @@ package com.sonumax2.javabot.domain.operation;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.MappedCollection;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Table("operation")
 public class Operation {
@@ -26,6 +29,12 @@ public class Operation {
     @Column("cancel_reason") private String cancelReason;
     @Column("exported_at") private LocalDateTime exportedAt;
     @Column("photo_file_id") private String photoFileId;
+
+    @MappedCollection(idColumn = "operation_id")
+    private Set<FuelDetail> fuelDetails = new HashSet<>();
+
+    @MappedCollection(idColumn = "operation_id")
+    private Set<SypDetail> sypDetails = new HashSet<>();
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -71,4 +80,10 @@ public class Operation {
 
     public String getPhotoFileId() { return photoFileId; }
     public void setPhotoFileId(String photoFileId) { this.photoFileId = photoFileId; }
+
+    public Set<FuelDetail> getFuelDetails() { return fuelDetails; }
+    public void setFuelDetails(Set<FuelDetail> fuelDetails) { this.fuelDetails = fuelDetails; }
+
+    public Set<SypDetail> getSypDetails() { return sypDetails; }
+    public void setSypDetails(Set<SypDetail> sypDetails) { this.sypDetails = sypDetails; }
 }

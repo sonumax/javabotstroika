@@ -10,8 +10,8 @@ import java.math.BigDecimal;
 @Table("fuel_detail")
 public class FuelDetail {
 
-    @Id
-    @Column("operation_id") private Long operationId;
+    @Id private Long id;
+
     @Column("fuel_kind") private FuelKind fuelKind; // "TRANSPORT" / "MACHINE"
     @Column("object_id") private Long objectId;
     @Column("machine_type_id") private Long machineTypeId;
@@ -19,8 +19,7 @@ public class FuelDetail {
     @Column("volume") private BigDecimal volume;
     @Column("receipt_type") private DocType docType = DocType.NO_RECEIPT;
 
-    public Long getOperationId() { return operationId; }
-    public void setOperationId(Long operationId) { this.operationId = operationId; }
+    public Long getId() { return id; }
 
     public FuelKind getFuelKind() { return fuelKind; }
     public void setFuelKind(FuelKind fuelKind) { this.fuelKind = fuelKind; }

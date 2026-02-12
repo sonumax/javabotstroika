@@ -33,9 +33,10 @@ public interface NomenclatureUsageRepository extends ListCrudRepository<Nomencla
 
     @Modifying
     @Query("""
-        insert into nomenclature_usage(nomenclature_id, usage)
-        values (:nomenclatureId, :usage)
-        on conflict (nomenclature_id, usage) do nothing
+    insert into nomenclature_usage(nomenclature_id, usage)
+    values (:nomenclatureId, :usage)
+    on conflict (nomenclature_id, usage) do nothing
     """)
-    void touch(long nomenclatureId, String usageType);
+    void touch(long nomenclatureId, String usage);
+
 }
