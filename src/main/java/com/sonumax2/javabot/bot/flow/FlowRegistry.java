@@ -14,18 +14,37 @@ public class FlowRegistry {
     private final Map<String, FlowDefinition<?>> byStartCb = new HashMap<>();
 
     public FlowRegistry(List<FlowDefinition<?>> defs) {
-        for (FlowDefinition<?> d : defs) {
-            byNs.put(d.ns, d);
+        for (FlowDefinition<?> flow : defs) {
+            registerUnique(byNs, flow.ns, flow, "namespace");
 
-            for (String cb : d.startCallbacks()) {
-                byStartCb.put(cb, d);
+            for (String cmd : flow.startCommands()) {
+                registerUnique(byCommand, cmd, flow, "startCommand");
             }
 
-            for (String cmd : d.startCommands()) {
-                byCommand.put(cmd, d);
+            for (String cb : flow.startCallbacks()) {
+                registerUnique(byStartCb, cb, flow, "startCallback");
             }
+
         }
     }
+
+    private void registerUnique(
+            Map<String, FlowDefinition<?>> map,
+            String key,
+            FlowDefinition<?> flow,
+            String type
+    ) {
+        FlowDefinition<?> prev = map.putIfAbsent(key, flow);
+        if (prev != null) {
+            throw new IllegalStateException(
+                    "FlowRegistry conflict for " + type + " '" + key + "': "
+                            + prev.getClass().getSimpleName()
+                            + " vs "
+                            + flow.getClass().getSimpleName()
+            );
+        }
+    }
+
 
     public FlowDefinition<?> getByStartCallback(String cb) {
         return byStartCb.get(cb);

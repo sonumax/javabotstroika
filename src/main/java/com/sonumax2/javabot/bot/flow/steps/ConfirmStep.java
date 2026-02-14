@@ -65,8 +65,6 @@ public class ConfirmStep<D extends OpDraftBase> implements FlowStep<D> {
     public StepMove onCallback(FlowContext<D> ctx, String data, PanelMode mode) {
         String ns = ctx.def.ns;
 
-        if (FlowCb.is(data, ns, id, "back")) return StepMove.stay();
-
         if (FlowCb.is(data, ns, id, "cancel")) {
             if (onCancel != null) onCancel.accept(ctx);
             return StepMove.finish();

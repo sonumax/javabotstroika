@@ -3,6 +3,9 @@ package com.sonumax2.javabot.bot.flow.fuel;
 import com.sonumax2.javabot.bot.commands.cb.Cb;
 import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.flow.*;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmDocUtil;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmField;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmRenderer;
 import com.sonumax2.javabot.bot.flow.steps.*;
 import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.DraftType;
@@ -300,7 +303,7 @@ public class FuelFlowConfig {
         return new TextInputStep<>(
                 S_NOTE,
                 "fuel.askNote",
-                "fuel.askNote",
+                "noteInvalid",
                 d -> d.note,
                 (d, v) -> d.note = v,
                 S_AMOUNT,
@@ -346,7 +349,52 @@ public class FuelFlowConfig {
     ) {
         return ConfirmStep.<FuelDraft>builder()
                 .id(S_CONFIRM)
-                .render(ctx -> renderConfirm(ctx, workObjectService, fuelMachineTypeService, counterpartyService))
+                .render(ctx -> {
+
+                    String kind = (ctx.d.fuelKind == FuelKind.MACHINE)
+                            ? ctx.ui().msg(ctx.chatId, "fuel.kind.machine")
+                            : ctx.ui().msg(ctx.chatId, "fuel.kind.transport");
+
+                    String machineType;
+                    if (ctx.d.isMachine() && ctx.d.machineTypeId != null) {
+                        machineType = fuelMachineTypeService
+                                .findName(ctx.d.machineTypeId)
+                                .orElse(null);
+                    } else {
+                        machineType = null;
+                    }
+
+                    String objectName = ctx.d.objectId == null
+                            ? null
+                            : workObjectService.findActiveById(ctx.d.objectId)
+                            .map(WorkObject::getName)
+                            .orElse(null);
+
+                    String counterpartyName = ctx.d.counterpartyId == null
+                            ? null
+                            : counterpartyService.findActiveById(ctx.d.counterpartyId)
+                            .map(Counterparty::getName)
+                            .orElse(null);
+
+                    String doc = ConfirmDocUtil.buildDocWithFileMark(ctx, ctx.d.docType, ctx.d.docFileId);
+
+                    return ConfirmRenderer.render(
+                            ctx,
+                            k -> ctx.ui().msg(ctx.chatId, k),
+                            List.of(
+                                    ConfirmField.of("confirm.kind", c -> kind),
+                                    ConfirmField.of("confirm.machineType", c -> machineType, c -> c.d.isMachine()),
+                                    ConfirmField.of("confirm.object", c -> objectName),
+                                    ConfirmField.of("confirm.date", c -> c.d.date == null ? null : c.d.date.toString()),
+                                    ConfirmField.of("confirm.cp", c -> counterpartyName),
+                                    ConfirmField.of("confirm.volume", c -> c.d.volume == null ? null : c.d.volume.toString()),
+                                    ConfirmField.of("confirm.amount", c -> c.d.amount == null ? null : c.d.amount.toString()),
+                                    ConfirmField.of("confirm.doc", c -> doc),
+                                    ConfirmField.of("confirm.note", c -> (c.d.note == null || c.d.note.isBlank()) ? null : c.d.note)
+                            ),
+                            "common.none"
+                    );
+                })
                 .editsProvider(ctx -> {
                     List<ConfirmStep.EditBtn> b = new ArrayList<>();
                     b.add(new ConfirmStep.EditBtn("btnEditFuelKind", S_KIND));
@@ -377,68 +425,6 @@ public class FuelFlowConfig {
     }
 
     // -------------------- helpers --------------------
-
-    private static String renderConfirm(
-            FlowContext<FuelDraft> ctx,
-            WorkObjectService workObjectService,
-            FuelMachineTypeService fuelMachineTypeService,
-            CounterpartyService counterpartyService
-    ) {
-        var d = ctx.d;
-
-        String none = ctx.ui().msg(ctx.chatId, "common.none");
-
-        String kind = (d.fuelKind == FuelKind.MACHINE)
-                ? ctx.ui().msg(ctx.chatId, "fuel.kind.machine")
-                : ctx.ui().msg(ctx.chatId, "fuel.kind.transport");
-
-        String mt = none;
-        if (d.isMachine() && d.machineTypeId != null) {
-            mt = fuelMachineTypeService.findName(d.machineTypeId).orElse(none);
-        }
-
-        String obj = workObjectService.findActiveById(d.objectId)
-                .map(WorkObject::getName)
-                .orElse(none);
-
-        String cp = counterpartyService.findActiveById(d.counterpartyId)
-                .map(Counterparty::getName)
-                .orElse(none);
-
-        String note = (d.note == null || d.note.isBlank()) ? none : d.note;
-
-        DocType dt = (d.docType == null ? DocType.NO_RECEIPT : d.docType);
-        String docLabel = switch (dt) {
-            case RECEIPT -> ctx.ui().msg(ctx.chatId, "expense.doc.receipt");
-            case INVOICE -> ctx.ui().msg(ctx.chatId, "expense.doc.invoice");
-            case NO_RECEIPT -> ctx.ui().msg(ctx.chatId, "expense.doc.none");
-        };
-
-        String fileMark = "";
-        if (dt.needsFile()) {
-            fileMark = " " + ctx.ui().msg(
-                    ctx.chatId,
-                    (d.docFileId != null && !d.docFileId.isBlank()) ? "expense.doc.file.ok" : "expense.doc.file.miss"
-            );
-        }
-
-        String doc = docLabel + fileMark;
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(ctx.ui().msg(ctx.chatId, "fuel.confirm"));
-        sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.kind", kind));
-        if (d.isMachine()) {
-            sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.machineType", mt));
-        }
-        sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.object", obj));
-        sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.date", d.date));
-        sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.cp", cp));
-        sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.volume", d.volume));
-        sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.amount", d.amount));
-        sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.doc", doc));
-        sb.append("\n").append(ctx.ui().msg(ctx.chatId, "fuel.confirm.note", note));
-        return sb.toString();
-    }
 
     private static <T> List<T> limit(List<T> list, int limit) {
         if (list == null || list.isEmpty()) return List.of();

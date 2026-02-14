@@ -5,6 +5,9 @@ import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.flow.ConfirmSupport;
 import com.sonumax2.javabot.bot.flow.FlowContext;
 import com.sonumax2.javabot.bot.flow.FlowDefinition;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmDocUtil;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmField;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmRenderer;
 import com.sonumax2.javabot.bot.flow.steps.*;
 import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.DraftType;
@@ -67,6 +70,7 @@ public class SypFlowConfig {
                 S_OBJ
         )
                 .addStartCallback(Cb.makeCb(CbParts.ADD_OPR, NS))
+                .addStartCommand("/syp")
 
                 // OBJECT
                 .addStep(stepObject(workObjectService))
@@ -107,7 +111,7 @@ public class SypFlowConfig {
         return SelectFromTopStep.<SypDraft, WorkObject>builder()
                 .id(S_OBJ)
                 .askKey("askObject")
-                .options(ctx -> workObjectService.recentByChat(ctx.chatId, 8))
+                .options(ctx -> workObjectService.suggestByChat(ctx.chatId, 8))
                 .bind(d -> d.objectId, (d, v) -> d.objectId = v)
                 .onTextSaveTo((d, txt) -> d.pendingObjectName = txt)
                 .backTo("@opsMenu")
@@ -202,7 +206,7 @@ public class SypFlowConfig {
         return SelectFromTopStep.<SypDraft, Counterparty>builder()
                 .id(S_CP)
                 .askKey("cp.ask")
-                .options(ctx -> counterpartyService.recentByChat(ctx.chatId, 8))
+                .options(ctx -> counterpartyService.suggestByChat(ctx.chatId, 8))
                 .bind(d -> d.counterpartyId, (d, v) -> d.counterpartyId = v)
                 .onTextSaveTo((d, txt) -> d.pendingCounterpartyName = txt)
                 .backTo(S_ITEMS)
@@ -270,7 +274,7 @@ public class SypFlowConfig {
         return new TextInputStep<>(
                 S_NOTE,
                 "syp.askNote",
-                "syp.askNote",
+                "noteInvalid",
                 d -> d.note,
                 (d, v) -> d.note = v,
                 S_DATE,
@@ -316,7 +320,57 @@ public class SypFlowConfig {
     ) {
         return ConfirmStep.<SypDraft>builder()
                 .id(S_CONFIRM)
-                .render(ctx -> renderConfirm(ctx, workObjectService, counterpartyService, nomenclatureService))
+                .render(ctx -> {
+
+                    String objectName = ctx.d.objectId == null
+                            ? null
+                            : workObjectService.findActiveById(ctx.d.objectId)
+                            .map(WorkObject::getName)
+                            .orElse(null);
+
+                    String counterpartyName = ctx.d.counterpartyId == null
+                            ? null
+                            : counterpartyService.findActiveById(ctx.d.counterpartyId)
+                            .map(Counterparty::getName)
+                            .orElse(null);
+
+                    String payType = (ctx.d.payType == null)
+                            ? null
+                            : ctx.ui().msg(
+                            ctx.chatId,
+                            ctx.d.payType == PayType.CASH
+                                    ? "payType.cash"
+                                    : "payType.cashless"
+                    );
+
+                    String doc = ConfirmDocUtil.buildDocWithFileMark(ctx, ctx.d.docType, ctx.d.docFileId);
+
+                    String items = renderItems(ctx, nomenclatureService);
+
+                    return ConfirmRenderer.render(
+                            ctx,
+                            k -> ctx.ui().msg(ctx.chatId, k),
+                            List.of(
+                                    ConfirmField.of("confirm.object", c -> objectName),
+
+                                    ConfirmField.multiline("confirm.items", c -> items),
+
+                                    ConfirmField.of("confirm.cp", c -> counterpartyName),
+
+                                    ConfirmField.of("confirm.payType", c -> payType),
+
+                                    ConfirmField.of("confirm.amount", c -> c.d.amount == null ? null : c.d.amount.toString()),
+
+                                    ConfirmField.of("confirm.date", c -> c.d.date == null ? null : c.d.date.toString()),
+
+                                    ConfirmField.of("confirm.note", c -> (c.d.note == null || c.d.note.isBlank()) ? null : c.d.note),
+
+                                    ConfirmField.of("confirm.doc", c -> doc)
+                            ),
+                            "common.none"
+                    );
+                })
+
                 .editsProvider(ctx -> {
                     List<ConfirmStep.EditBtn> b = new ArrayList<>();
                     b.add(new ConfirmStep.EditBtn("btnEditObject", S_OBJ));
@@ -343,55 +397,53 @@ public class SypFlowConfig {
                 .build();
     }
 
-    private static String renderConfirm(
+    private static String renderItems(
             FlowContext<SypDraft> ctx,
-            WorkObjectService workObjectService,
-            CounterpartyService counterpartyService,
             NomenclatureService nomenclatureService
     ) {
         var d = ctx.d;
         String none = ctx.ui().msg(ctx.chatId, "common.none");
 
-        String obj = workObjectService.findActiveById(d.objectId).map(WorkObject::getName).orElse(none);
-        String cp  = counterpartyService.findActiveById(d.counterpartyId).map(Counterparty::getName).orElse(none);
-
-        String pay = (d.payType == null)
-                ? none
-                : ctx.ui().msg(ctx.chatId, d.payType == PayType.CASH ? "payType.cash" : "payType.cashless");
+        if (d.items == null || d.items.isEmpty()) {
+            return none;
+        }
 
         StringBuilder items = new StringBuilder();
-        if (d.items == null || d.items.isEmpty()) {
-            items.append(none);
-        } else {
-            for (int i = 0; i < d.items.size(); i++) {
-                ExpenseLineItem it = d.items.get(i);
-                String name = (it == null || it.nomenclatureId == null) ? "?" :
-                        nomenclatureService.findActiveById(it.nomenclatureId).map(Nomenclature::getName).orElse("?");
-                String vol = (it == null || it.volume == null) ? "?" : it.volume.toPlainString();
-                items.append(i + 1).append(") ").append(name).append(" — ").append(vol).append("\n");
+
+        for (int i = 0; i < d.items.size(); i++) {
+            ExpenseLineItem it = d.items.get(i);
+
+            String name = (it == null || it.nomenclatureId == null)
+                    ? "?"
+                    : nomenclatureService.findActiveById(it.nomenclatureId)
+                    .map(Nomenclature::getName)
+                    .orElse("?");
+
+            String vol = (it == null || it.volume == null)
+                    ? "?"
+                    : it.volume.toPlainString();
+
+            items.append(i + 1)
+                    .append(") ")
+                    .append(name)
+                    .append(" — ")
+                    .append(vol);
+
+            if (i < d.items.size() - 1) {
+                items.append("\n");
             }
         }
 
-        String note = (d.note == null || d.note.isBlank()) ? none : d.note;
+        return items.toString();
+    }
 
-        DocType doc = (d.docType == null ? DocType.NO_RECEIPT : d.docType);
-        String docLabel = switch (doc) {
+    private static String docLabel(FlowContext<SypDraft> ctx) {
+        DocType doc = (ctx.d.docType == null ? DocType.NO_RECEIPT : ctx.d.docType);
+        return switch (doc) {
             case RECEIPT -> ctx.ui().msg(ctx.chatId, "expense.doc.receipt");
             case INVOICE -> ctx.ui().msg(ctx.chatId, "expense.doc.invoice");
             case NO_RECEIPT -> ctx.ui().msg(ctx.chatId, "expense.doc.none");
         };
-
-        String file = (d.docFileId == null || d.docFileId.isBlank()) ? none : "✅";
-
-        return ""
-                + ctx.ui().msg(ctx.chatId, "confirm.object") + ": " + obj + "\n"
-                + ctx.ui().msg(ctx.chatId, "confirm.items") + ":\n" + items + "\n"
-                + ctx.ui().msg(ctx.chatId, "confirm.cp") + ": " + cp + "\n"
-                + ctx.ui().msg(ctx.chatId, "confirm.payType") + ": " + pay + "\n"
-                + ctx.ui().msg(ctx.chatId, "confirm.amount") + ": " + (d.amount == null ? none : d.amount) + "\n"
-                + ctx.ui().msg(ctx.chatId, "confirm.date") + ": " + (d.date == null ? none : d.date) + "\n"
-                + ctx.ui().msg(ctx.chatId, "confirm.note") + ": " + note + "\n"
-                + ctx.ui().msg(ctx.chatId, "confirm.doc") + ": " + docLabel + "\n"
-                + ctx.ui().msg(ctx.chatId, "confirm.file") + ": " + file;
     }
+
 }

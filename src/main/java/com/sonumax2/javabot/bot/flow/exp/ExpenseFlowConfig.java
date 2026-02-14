@@ -4,6 +4,9 @@ import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.commands.cb.Cb;
 import com.sonumax2.javabot.bot.flow.FlowContext;
 import com.sonumax2.javabot.bot.flow.FlowDefinition;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmDocUtil;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmField;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmRenderer;
 import com.sonumax2.javabot.bot.flow.steps.*;
 import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.DraftType;
@@ -95,11 +98,7 @@ public class ExpenseFlowConfig {
         return SelectFromTopStep.<ExpenseDraft, WorkObject>builder()
                 .id(S_OBJ)
                 .askKey("askObject")
-                .options(ctx -> mergeById(
-                        workObjectService.recentByChat(ctx.chatId, 8),
-                        workObjectService.listActiveTop50(),
-                        8
-                ))
+                .options(ctx -> workObjectService.suggestByChat(ctx.chatId, 8))
                 .bind(d -> d.objectId, (d, v) -> d.objectId = v)
                 .onTextSaveTo((d, txt) -> d.pendingObjectName = txt)
                 .backTo("@opsMenu")
@@ -139,11 +138,7 @@ public class ExpenseFlowConfig {
 
                     return mergeById(
                             byOps,
-                            mergeById(
-                                    nomenclatureService.recentByChat(ctx.chatId, 8),
-                                    nomenclatureService.listActiveTop50(),
-                                    8
-                            ),
+                            nomenclatureService.suggestByChat(ctx.chatId, 8),
                             8
                     );
                 })
@@ -177,16 +172,12 @@ public class ExpenseFlowConfig {
     ) {
         return SelectFromTopStep.<ExpenseDraft, Counterparty>builder()
                 .id(S_CP)
-                .askKey("counterparty.search.title")
+                .askKey("expense.askCounterparty")
                 .options(ctx -> {
                     if (ctx.d.nomenclatureId != null) {
                         return expenseService.suggestCounterparty(ctx.chatId, ctx.d.nomenclatureId, 8);
                     }
-                    return mergeById(
-                            counterpartyService.recentByChat(ctx.chatId, 8),
-                            counterpartyService.listActiveTop50(),
-                            8
-                    );
+                    return counterpartyService.suggestByChat(ctx.chatId, 8);
                 })
                 .bind(d -> d.counterpartyId, (d, v) -> d.counterpartyId = v)
                 .onTextSaveTo((d, txt) -> d.pendingCounterpartyName = txt)
@@ -202,7 +193,7 @@ public class ExpenseFlowConfig {
     ) {
         return SearchPickOrCreateRefStep.<ExpenseDraft, Counterparty>builder()
                 .id(S_CP_SEARCH)
-                .askKey("counterparty.search.title")
+                .askKey("expense.askCounterparty")
                 .pending(d -> d.pendingCounterpartyName, (d, v) -> d.pendingCounterpartyName = v)
                 .saveIdTo((d, v) -> d.counterpartyId = v)
                 .exact((ctx, text) -> counterpartyService.findExact(ctx.d.counterpartyKind, text))
@@ -267,7 +258,7 @@ public class ExpenseFlowConfig {
         return new TextInputStep<>(
                 S_NOTE,
                 "expense.askNote",
-                "expense.askNote",
+                "noteInvalid",
                 d -> d.note,
                 (d, v) -> d.note = v,
                 S_DOC,
@@ -286,8 +277,44 @@ public class ExpenseFlowConfig {
     ) {
         return ConfirmStep.<ExpenseDraft>builder()
             .id(S_CONFIRM)
-            .render(ctx -> renderConfirm(ctx, workObjectService, nomenclatureService, counterpartyService))
-            .editsProvider(ctx -> {
+                .render(ctx -> {
+                    String obj = ctx.d.objectId == null
+                            ? null
+                            : workObjectService.findActiveById(ctx.d.objectId)
+                            .map(WorkObject::getName)
+                            .orElse(null);
+
+                    String item = ctx.d.nomenclatureId == null
+                            ? null
+                            : nomenclatureService.findActiveById(ctx.d.nomenclatureId)
+                            .map(Nomenclature::getName)
+                            .orElse(null);
+
+                    String cp = ctx.d.counterpartyId == null
+                            ? null
+                            : counterpartyService.findActiveById(ctx.d.counterpartyId)
+                            .map(Counterparty::getName)
+                            .orElse(null);
+
+                    String doc = ConfirmDocUtil.buildDocWithFileMark(ctx, ctx.d.docType, ctx.d.docFileId);
+
+                    return ConfirmRenderer.render(
+                            ctx,
+                            k -> ctx.ui().msg(ctx.chatId, k),
+                            List.of(
+                                    ConfirmField.of("confirm.object", c -> obj),
+                                    ConfirmField.of("confirm.item",   c -> item),
+                                    ConfirmField.of("confirm.cp",     c -> cp),
+                                    ConfirmField.of("confirm.amount", c -> c.d.amount == null ? null : c.d.amount.toString()),
+                                    ConfirmField.of("confirm.date",   c -> c.d.date == null ? null : c.d.date.toString()),
+                                    ConfirmField.of("confirm.doc",    c -> doc),
+                                    ConfirmField.of("confirm.note",   c -> (c.d.note == null || c.d.note.isBlank()) ? null : c.d.note)
+                            ),
+                            "common.none"
+                    );
+                })
+
+                .editsProvider(ctx -> {
                 List<ConfirmStep.EditBtn> b = new ArrayList<>();
                 b.add(new ConfirmStep.EditBtn("btnEditObject", S_OBJ));
                 b.add(new ConfirmStep.EditBtn("btnEditItem", S_ITEM));
@@ -337,54 +364,6 @@ public class ExpenseFlowConfig {
     }
 
     // -------------------- helpers --------------------
-
-    private static String renderConfirm(
-            FlowContext<ExpenseDraft> ctx,
-            WorkObjectService workObjectService,
-            NomenclatureService nomenclatureService,
-            CounterpartyService counterpartyService
-    ) {
-        var d = ctx.d;
-
-        String none = ctx.ui().msg(ctx.chatId, "common.none");
-
-        String obj = workObjectService.findActiveById(d.objectId).map(WorkObject::getName).orElse(none);
-        String item = nomenclatureService.findActiveById(d.nomenclatureId).map(Nomenclature::getName).orElse(none);
-        String cp = (d.counterpartyId == null)
-                ? none
-                : counterpartyService.findActiveById(d.counterpartyId).map(Counterparty::getName).orElse(none);
-
-        String note = (d.note == null || d.note.isBlank()) ? none : d.note;
-
-        String docLabel = switch (d.docType == null ? DocType.NO_RECEIPT : d.docType) {
-            case RECEIPT -> ctx.ui().msg(ctx.chatId, "expense.doc.receipt");
-            case INVOICE -> ctx.ui().msg(ctx.chatId, "expense.doc.invoice");
-            case NO_RECEIPT -> ctx.ui().msg(ctx.chatId, "expense.doc.none");
-        };
-
-        String fileMark = "";
-        DocType dt = (d.docType == null ? DocType.NO_RECEIPT : d.docType);
-        if (dt.needsFile()) {
-            fileMark = " " + ctx.ui().msg(
-                    ctx.chatId,
-                    (d.docFileId != null && !d.docFileId.isBlank()) ? "expense.doc.file.ok" : "expense.doc.file.miss"
-            );
-        }
-
-        String doc = docLabel + fileMark;
-
-        return ctx.ui().msg(
-                ctx.chatId,
-                "expense.confirm",
-                obj,
-                item,
-                cp,
-                d.amount,
-                d.date,
-                doc,
-                note
-        );
-    }
 
     private static <T extends BaseRefEntity> List<T> mergeById(List<T> a, List<T> b, int limit) {
         if (limit <= 0) return List.of();

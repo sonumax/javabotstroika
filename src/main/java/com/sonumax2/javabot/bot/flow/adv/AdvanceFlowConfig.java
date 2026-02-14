@@ -3,6 +3,8 @@ package com.sonumax2.javabot.bot.flow.adv;
 import com.sonumax2.javabot.bot.commands.cb.Cb;
 import com.sonumax2.javabot.bot.commands.cb.CbParts;
 import com.sonumax2.javabot.bot.flow.FlowDefinition;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmField;
+import com.sonumax2.javabot.bot.flow.confirm.ConfirmRenderer;
 import com.sonumax2.javabot.bot.flow.steps.AmountInputStep;
 import com.sonumax2.javabot.bot.flow.steps.ConfirmStep;
 import com.sonumax2.javabot.bot.flow.steps.DateInputStep;
@@ -13,6 +15,7 @@ import com.sonumax2.javabot.domain.draft.DraftType;
 import com.sonumax2.javabot.domain.operation.Operation;
 import com.sonumax2.javabot.domain.operation.OperationType;
 import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
+import com.sonumax2.javabot.domain.reference.WorkObject;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -69,18 +72,22 @@ public class AdvanceFlowConfig {
 
                 .addStep(new ConfirmStep<>(
                         FlowDefinition.STEP_CONFIRM,
-                        ctx -> {
-                            var d = ctx.d;
-                            String note = (d.note == null || d.note.isBlank())
-                                    ? ctx.ui().msg(ctx.chatId, "common.none")
-                                    : d.note;
-
-                            return ""
-                                    + ctx.ui().msg(ctx.chatId, "adv.confirm.title") + "\n"
-                                    + ctx.ui().msg(ctx.chatId, "adv.confirm.date", d.date) + "\n"
-                                    + ctx.ui().msg(ctx.chatId, "adv.confirm.amount", d.amount) + "\n"
-                                    + ctx.ui().msg(ctx.chatId, "adv.confirm.note", note);
-                        },
+                        ctx -> ConfirmRenderer.render(
+                                ctx,
+                                k -> ctx.ui().msg(ctx.chatId, k),
+                                List.of(
+                                        ConfirmField.of("confirm.date",
+                                                c -> c.d.date == null ? null : c.d.date.toString()
+                                        ),
+                                        ConfirmField.of("confirm.amount",
+                                                c -> c.d.amount == null ? null : c.d.amount.toString()
+                                                ),
+                                        ConfirmField.of("confirm.note",
+                                                c -> (c.d.note == null || c.d.note.isBlank()) ? null : c.d.note
+                                        )
+                                ),
+                                "common.none"
+                        ),
                         List.of(
                                 new ConfirmStep.EditBtn("btnEditDate", "date"),
                                 new ConfirmStep.EditBtn("btnEditAmount", "amount"),
