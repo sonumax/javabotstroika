@@ -5,8 +5,11 @@ import com.sonumax2.javabot.domain.operation.Expense;
 import com.sonumax2.javabot.domain.operation.Operation;
 import com.sonumax2.javabot.domain.operation.OperationType;
 import com.sonumax2.javabot.domain.operation.repo.OperationRepository;
+import com.sonumax2.javabot.domain.reference.BaseRefEntity;
 import com.sonumax2.javabot.domain.reference.Counterparty;
 import com.sonumax2.javabot.domain.operation.repo.ExpenseRepository;
+import com.sonumax2.javabot.domain.reference.CounterpartyKind;
+import com.sonumax2.javabot.domain.reference.repo.CounterpartyRepository;
 import com.sonumax2.javabot.domain.reference.service.CounterpartyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,11 +24,13 @@ import java.util.stream.StreamSupport;
 public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
+    private final CounterpartyRepository counterpartyRepository;
     private final CounterpartyService counterpartyService;
     private final OperationRepository operationRepository;
 
-    public ExpenseService(ExpenseRepository expenseRepository, CounterpartyService counterpartyService, OperationRepository operationRepository) {
+    public ExpenseService(ExpenseRepository expenseRepository, CounterpartyRepository counterpartyRepository, CounterpartyService counterpartyService, OperationRepository operationRepository) {
         this.expenseRepository = expenseRepository;
+        this.counterpartyRepository = counterpartyRepository;
         this.counterpartyService = counterpartyService;
         this.operationRepository = operationRepository;
     }
@@ -148,6 +153,35 @@ public class ExpenseService {
         }
 
         return loadCounterpartiesInOrder(new ArrayList<>(ids));
+    }
+
+    public List<Counterparty> suggestCounterparty(
+            long nomenclatureId,
+            CounterpartyKind kind,
+            int limit
+    ) {
+        List<Long> ids = expenseRepository
+                .findRecentCounterpartyIdsByNomenclatureAndKind(
+                        nomenclatureId, kind, limit
+                );
+
+        List<Counterparty> primary = counterpartyRepository
+                .findAllById(ids)
+                .stream()
+                .filter(BaseRefEntity::isActive)
+                .toList();
+
+        if (primary.size() >= limit) return primary;
+
+        int remaining = limit - primary.size();
+        List<Counterparty> extra =
+                counterpartyService.search(kind, "", remaining);
+
+        var map = new java.util.LinkedHashMap<Long, Counterparty>();
+        primary.forEach(cp -> map.put(cp.getId(), cp));
+        extra.forEach(cp -> map.put(cp.getId(), cp));
+
+        return map.values().stream().limit(limit).toList();
     }
 
 

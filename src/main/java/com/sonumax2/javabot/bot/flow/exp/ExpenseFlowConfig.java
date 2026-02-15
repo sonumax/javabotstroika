@@ -13,10 +13,7 @@ import com.sonumax2.javabot.domain.draft.DraftType;
 import com.sonumax2.javabot.domain.draft.ExpenseDraft;
 import com.sonumax2.javabot.domain.operation.DocType;
 import com.sonumax2.javabot.domain.operation.service.ExpenseService;
-import com.sonumax2.javabot.domain.reference.BaseRefEntity;
-import com.sonumax2.javabot.domain.reference.Counterparty;
-import com.sonumax2.javabot.domain.reference.Nomenclature;
-import com.sonumax2.javabot.domain.reference.WorkObject;
+import com.sonumax2.javabot.domain.reference.*;
 import com.sonumax2.javabot.domain.reference.service.CounterpartyService;
 import com.sonumax2.javabot.domain.reference.service.NomenclatureService;
 import com.sonumax2.javabot.domain.reference.service.WorkObjectService;
@@ -47,6 +44,7 @@ public class ExpenseFlowConfig {
     private static final String S_DOC_FILE = "docFile";
 
     private static final String S_NOTE = "note";
+    private static final String S_CP_KIND_EDIT = "cpKindEdit";
     private static final String S_CONFIRM = FlowDefinition.STEP_CONFIRM;
 
     @Bean
@@ -87,6 +85,8 @@ public class ExpenseFlowConfig {
 
                 // -------- NOTE --------
                 .addStep(stepNote())
+
+                .addStep(stepCounterpartyKindEdit())
 
                 // -------- CONFIRM --------
                 .addStep(stepConfirm(workObjectService, nomenclatureService, counterpartyService, expenseService));
@@ -175,9 +175,13 @@ public class ExpenseFlowConfig {
                 .askKey("expense.askCounterparty")
                 .options(ctx -> {
                     if (ctx.d.nomenclatureId != null) {
-                        return expenseService.suggestCounterparty(ctx.chatId, ctx.d.nomenclatureId, 8);
+                        return expenseService.suggestCounterparty(
+                                ctx.d.nomenclatureId,
+                                ctx.d.counterpartyKind,
+                                8
+                        );
                     }
-                    return counterpartyService.suggestByChat(ctx.chatId, 8);
+                    return counterpartyService.suggestByChat(ctx.chatId, ctx.d.counterpartyKind, 8);
                 })
                 .bind(d -> d.counterpartyId, (d, v) -> d.counterpartyId = v)
                 .onTextSaveTo((d, txt) -> d.pendingCounterpartyName = txt)
@@ -196,9 +200,13 @@ public class ExpenseFlowConfig {
                 .askKey("expense.askCounterparty")
                 .pending(d -> d.pendingCounterpartyName, (d, v) -> d.pendingCounterpartyName = v)
                 .saveIdTo((d, v) -> d.counterpartyId = v)
-                .exact((ctx, text) -> counterpartyService.findExact(text))
-                .search((ctx, text, lim) -> counterpartyService.search(text, lim))
-                .create((ctx, text) -> counterpartyService.getOrCreate(text, ctx.chatId).getId())
+                .exact((ctx, text) -> counterpartyService.findExact(ctx.d.counterpartyKind, text))
+                .search((ctx, text, lim) -> counterpartyService.search(ctx.d.counterpartyKind, text, lim))
+                .create((ctx, text) -> {
+                    CounterpartyKind k = detectExpenseKind(ctx.d, text);
+                    ctx.d.counterpartyKind = k;
+                    return counterpartyService.getOrCreate(text, k, ctx.chatId).getId();
+                })
                 .backTo(S_CP)
                 .nextTo(S_AMOUNT)
                 .limit(8)
@@ -269,6 +277,24 @@ public class ExpenseFlowConfig {
         );
     }
 
+    private static EnumSelectStep<ExpenseDraft, CounterpartyKind> stepCounterpartyKindEdit() {
+        return new EnumSelectStep<>(
+                S_CP_KIND_EDIT,
+                "expense.askCounterpartyKindEdit",
+                CounterpartyKind.class,
+                k -> "counterpartyKind." + k.name(),
+                d -> d.counterpartyKind,
+                (d, v) -> {
+                    d.counterpartyKind = v;
+                    d.counterpartyId = null;
+                    d.pendingCounterpartyName = null;
+                },
+                S_CONFIRM,      // back
+                S_CONFIRM       // next -> возвращаемся в confirm
+        );
+    }
+
+
     private static ConfirmStep<ExpenseDraft> stepConfirm(
             WorkObjectService workObjectService,
             NomenclatureService nomenclatureService,
@@ -298,6 +324,12 @@ public class ExpenseFlowConfig {
 
                     String doc = ConfirmDocUtil.buildDocWithFileMark(ctx, ctx.d.docType, ctx.d.docFileId);
 
+                    CounterpartyKind counterpartyKind = ctx.d.counterpartyKind;
+
+                    String cpKindText = (counterpartyKind == null)
+                            ? null
+                            : ctx.ui().msg(ctx.chatId, "counterpartyKind." + counterpartyKind.name());
+
                     return ConfirmRenderer.render(
                             ctx,
                             k -> ctx.ui().msg(ctx.chatId, k),
@@ -308,7 +340,8 @@ public class ExpenseFlowConfig {
                                     ConfirmField.of("confirm.amount", c -> c.d.amount == null ? null : c.d.amount.toString()),
                                     ConfirmField.of("confirm.date",   c -> c.d.date == null ? null : c.d.date.toString()),
                                     ConfirmField.of("confirm.doc",    c -> doc),
-                                    ConfirmField.of("confirm.note",   c -> (c.d.note == null || c.d.note.isBlank()) ? null : c.d.note)
+                                    ConfirmField.of("confirm.note",   c -> (c.d.note == null || c.d.note.isBlank()) ? null : c.d.note),
+                                    ConfirmField.of("expense.confirm.counterpartyKind",   c -> cpKindText)
                             ),
                             "common.none"
                     );
@@ -328,6 +361,7 @@ public class ExpenseFlowConfig {
                     b.add(new ConfirmStep.EditBtn(key, S_DOC_FILE));
                 }
                 b.add(new ConfirmStep.EditBtn("btnEditNote", S_NOTE));
+                b.add(new ConfirmStep.EditBtn("expense.editCounterpartyKind", S_CP_KIND_EDIT));
                 return b;
             })
             .allowSave(ctx -> {
@@ -387,5 +421,15 @@ public class ExpenseFlowConfig {
         }
 
         return new ArrayList<>(map.values());
+    }
+
+    private static CounterpartyKind detectExpenseKind(ExpenseDraft d, String text) {
+        String t = text == null ? "" : text.toLowerCase();
+
+        if (t.contains("рабоч") || t.contains("бригада") || t.contains("разнораб")) {
+            return CounterpartyKind.WORKERS;
+        }
+
+        return CounterpartyKind.STORE;
     }
 }

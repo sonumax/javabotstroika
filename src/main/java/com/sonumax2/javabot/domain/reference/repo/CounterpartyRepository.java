@@ -14,8 +14,9 @@ public interface CounterpartyRepository extends ListCrudRepository<Counterparty,
     List<Counterparty> findByActiveTrueAndKindOrderByNameAsc(CounterpartyKind kind);
     Optional<Counterparty> findFirstByActiveTrueAndNameNorm(String nameNorm);
     Optional<Counterparty> findFirstByActiveTrueAndKindAndNameNorm(CounterpartyKind kind, String nameNorm);
-    Optional<Counterparty> findTop1ByNameNormOrderByIdDesc(String nameNorm);
     List<Counterparty> findByActiveTrueAndCreatedByChatIdOrderByCreatedAtDesc(Long chatId);
+    Optional<Counterparty> findTop1ByKindAndNameNormOrderByIdDesc(CounterpartyKind kind, String nameNorm);
+
 
     @Query("""
         select *

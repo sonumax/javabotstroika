@@ -188,8 +188,8 @@
         </createTable>
 
         <sql>
-            CREATE UNIQUE INDEX ux_counterparty_name_norm_active
-            ON counterparty (name_norm)
+            CREATE UNIQUE INDEX ux_counterparty_kind_name_norm_active
+            ON counterparty (kind, name_norm)
             WHERE is_active = true;
         </sql>
 
@@ -201,7 +201,7 @@
         <sql>
             ALTER TABLE counterparty
             ADD CONSTRAINT chk_counterparty_kind
-            CHECK (kind IN ('FUEL','STORE','MATERIALS','SERVICE','COMPANY','OTHER'));
+            CHECK (kind IN ('FUEL','STORE','MATERIAL_SUPPLIER','SERVICE','WORKERS','OTHER'));
         </sql>
 
         <!-- ===================== nomenclature ===================== -->

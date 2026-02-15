@@ -1,9 +1,11 @@
 package com.sonumax2.javabot.domain.operation.repo;
 
 import com.sonumax2.javabot.domain.operation.Expense;
+import com.sonumax2.javabot.domain.reference.CounterpartyKind;
 import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.ListCrudRepository;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -108,4 +110,22 @@ public interface ExpenseRepository extends ListCrudRepository<Expense, Long> {
                 limit :limit
             """)
     List<Long> topCounterpartyIdsByChatAndNomenclature(long chatId, long nomId, int limit);
+
+    @Query("""
+    SELECT e.counterparty_id
+    FROM expense e
+    JOIN counterparty c ON c.id = e.counterparty_id
+    WHERE e.nomenclature_id = :nomenclatureId
+      AND c.kind = :kind
+      AND c.is_active = true
+    GROUP BY e.counterparty_id
+    ORDER BY MAX(e.operation_id) DESC
+    LIMIT :limit
+    """)
+    List<Long> findRecentCounterpartyIdsByNomenclatureAndKind(
+            @Param("nomenclatureId") long nomenclatureId,
+            @Param("kind") CounterpartyKind kind,
+            @Param("limit") int limit
+    );
+
 }

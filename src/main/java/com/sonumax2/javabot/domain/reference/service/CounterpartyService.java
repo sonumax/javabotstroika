@@ -140,20 +140,12 @@ public class CounterpartyService {
         CounterpartyKind k = kindOrDefault(kind);
         String norm = NameNormUtils.normalizeNorm(ui);
 
-        // 1) уникальность среди активных по name_norm (без kind)
-        Optional<Counterparty> active = repo.findFirstByActiveTrueAndNameNorm(norm);
-        if (active.isPresent()) {
-            Counterparty cp = active.get();
-            // мягкий апгрейд kind
-            if (cp.getKind() == CounterpartyKind.OTHER && k != CounterpartyKind.OTHER) {
-                cp.setKind(k);
-                return repo.save(cp);
-            }
-            return cp;
-        }
+        // 1) активный дубль ТОЛЬКО в рамках kind
+        Optional<Counterparty> active = repo.findFirstByActiveTrueAndKindAndNameNorm(k, norm);
+        if (active.isPresent()) return active.get();
 
-        // 2) если есть неактивный — реактивируем самый свежий дубль
-        Optional<Counterparty> any = repo.findTop1ByNameNormOrderByIdDesc(norm);
+        // 2) если есть неактивный дубль этого kind — реактивируем
+        Optional<Counterparty> any = repo.findTop1ByKindAndNameNormOrderByIdDesc(k, norm);
         if (any.isPresent()) {
             Counterparty cp = any.get();
             if (!cp.isActive()) {
@@ -163,7 +155,7 @@ public class CounterpartyService {
                 try {
                     return repo.save(cp);
                 } catch (DataIntegrityViolationException e) {
-                    return repo.findFirstByActiveTrueAndNameNorm(norm).orElseThrow(() -> e);
+                    return repo.findFirstByActiveTrueAndKindAndNameNorm(k, norm).orElseThrow(() -> e);
                 }
             }
         }
@@ -180,9 +172,10 @@ public class CounterpartyService {
         try {
             return repo.save(cp);
         } catch (DataIntegrityViolationException e) {
-            return repo.findFirstByActiveTrueAndNameNorm(norm).orElseThrow(() -> e);
+            return repo.findFirstByActiveTrueAndKindAndNameNorm(k, norm).orElseThrow(() -> e);
         }
     }
+
 
     public Iterable<Counterparty> findAllById(Iterable<Long> ids) {
         return repo.findAllById(ids);
