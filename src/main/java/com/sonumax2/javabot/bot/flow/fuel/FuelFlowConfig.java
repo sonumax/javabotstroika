@@ -104,7 +104,7 @@ public class FuelFlowConfig {
     private static EnumSelectStep<FuelDraft, FuelKind> stepKind() {
         return new EnumSelectStep<>(
                 S_KIND,
-                "fuel.askKind",
+                "fuel.askBranch",
                 FuelKind.class,
                 k -> (k == FuelKind.MACHINE) ? "fuel.kind.machine" : "fuel.kind.transport",
                 d -> d.fuelKind,
@@ -182,7 +182,7 @@ public class FuelFlowConfig {
         // prevStepId зависит от ветки: MACHINE -> mtype, TRANSPORT -> kind
         return new SelectFromTopStep<>(
                 S_OBJ,
-                "fuel.askObject",
+                "askObject",
                 ctx -> workObjectService.suggestByChat(ctx.chatId, 8),
                 d -> d.objectId,
                 (d, v) -> d.objectId = v,
@@ -209,7 +209,7 @@ public class FuelFlowConfig {
     ) {
         return SearchPickOrCreateRefStep.<FuelDraft, WorkObject>builder()
                 .id(S_OBJ_SEARCH)
-                .askKey("fuel.object.search")
+                .askKey("object.search.title")
                 .pending(d -> d.pendingObjectName, (d, v) -> d.pendingObjectName = v)
                 .saveIdTo((d, v) -> d.objectId = v)
                 .exact((ctx, text) -> workObjectService.findExact(text))

@@ -129,7 +129,7 @@ public class ExpenseFlowConfig {
     ) {
         return SelectFromTopStep.<ExpenseDraft, Nomenclature>builder()
                 .id(S_ITEM)
-                .askKey("nomenclature.choseOrAdd")
+                .askKey("nomenclature.chooseOrAdd")
                 .options(ctx -> {
                     List<Nomenclature> byOps = nomenclatureService.loadActiveInOrder(
                             expenseService.suggestNomenclatureIds(ctx.chatId, 8)
@@ -196,9 +196,9 @@ public class ExpenseFlowConfig {
                 .askKey("expense.askCounterparty")
                 .pending(d -> d.pendingCounterpartyName, (d, v) -> d.pendingCounterpartyName = v)
                 .saveIdTo((d, v) -> d.counterpartyId = v)
-                .exact((ctx, text) -> counterpartyService.findExact(ctx.d.counterpartyKind, text))
-                .search((ctx, text, lim) -> counterpartyService.search(ctx.d.counterpartyKind, text, lim))
-                .create((ctx, text) -> counterpartyService.getOrCreate(text, ctx.d.counterpartyKind, ctx.chatId).getId())
+                .exact((ctx, text) -> counterpartyService.findExact(text))
+                .search((ctx, text, lim) -> counterpartyService.search(text, lim))
+                .create((ctx, text) -> counterpartyService.getOrCreate(text, ctx.chatId).getId())
                 .backTo(S_CP)
                 .nextTo(S_AMOUNT)
                 .limit(8)

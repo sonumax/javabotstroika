@@ -205,7 +205,7 @@ public class SypFlowConfig {
     private static SelectFromTopStep<SypDraft, Counterparty> stepCounterparty(CounterpartyService counterpartyService) {
         return SelectFromTopStep.<SypDraft, Counterparty>builder()
                 .id(S_CP)
-                .askKey("cp.ask")
+                .askKey("counterparty.ask")
                 .options(ctx -> counterpartyService.suggestByChat(ctx.chatId, 8))
                 .bind(d -> d.counterpartyId, (d, v) -> d.counterpartyId = v)
                 .onTextSaveTo((d, txt) -> d.pendingCounterpartyName = txt)
@@ -219,7 +219,7 @@ public class SypFlowConfig {
     private static SearchPickOrCreateRefStep<SypDraft, Counterparty> stepCounterpartySearch(CounterpartyService counterpartyService) {
         return SearchPickOrCreateRefStep.<SypDraft, Counterparty>builder()
                 .id(S_CP_SEARCH)
-                .askKey("cp.search.title")
+                .askKey("counterparty.search.title")
                 .pending(d -> d.pendingCounterpartyName, (d, v) -> d.pendingCounterpartyName = v)
                 .saveIdTo((d, v) -> d.counterpartyId = v)
                 .exact((ctx, text) -> counterpartyService.findExact(text))

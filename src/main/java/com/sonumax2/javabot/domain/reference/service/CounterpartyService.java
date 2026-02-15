@@ -105,7 +105,6 @@ public class CounterpartyService {
         return out;
     }
 
-
     public List<Counterparty> search(String rawName, int limit) {
         String norm = NameNormUtils.normalizeNorm(rawName);
         if (norm.isBlank()) return List.of();
