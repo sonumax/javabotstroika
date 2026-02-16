@@ -11,4 +11,9 @@ public interface UserAccountRepo extends CrudRepository<UserAccount, Long> {
     List<UserAccount> findAllByStatus(UserStatus status);
 
     long countByRoleAndStatus(UserRole role, UserStatus status);
+
+    List<UserAccount> findAllByRoleAndStatus(UserRole role, UserStatus status);
+
+    boolean existsByChatId(Long chatId);
+
 }
