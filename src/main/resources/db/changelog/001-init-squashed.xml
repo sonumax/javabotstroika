@@ -37,6 +37,45 @@
                              columnNames="chat_id"
                              constraintName="uk_user_session_chat_id"/>
 
+        <!-- ===================== user_account (auth) ===================== -->
+        <createTable tableName="user_account">
+            <column name="chat_id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="role" type="VARCHAR(16)" defaultValue="USER">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="status" type="VARCHAR(16)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="first_name" type="VARCHAR(128)"/>
+            <column name="username" type="VARCHAR(64)"/>
+
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="requested_at" type="TIMESTAMP" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="approved_at" type="TIMESTAMP"/>
+            <column name="approved_by" type="BIGINT"/>
+
+            <column name="note" type="TEXT"/>
+        </createTable>
+
+        <createIndex tableName="user_account" indexName="idx_user_account_status">
+            <column name="status"/>
+        </createIndex>
+
+        <createIndex tableName="user_account" indexName="idx_user_account_role">
+            <column name="role"/>
+        </createIndex>
+
         <!-- ===================== operation ===================== -->
         <createTable tableName="operation">
             <column name="id" type="BIGSERIAL">
