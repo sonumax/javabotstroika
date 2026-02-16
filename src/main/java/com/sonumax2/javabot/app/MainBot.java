@@ -15,6 +15,7 @@ import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateC
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.util.List;
 
@@ -34,8 +35,7 @@ public class MainBot implements SpringLongPollingBot, LongPollingSingleThreadUpd
             CommandHandler commandHandler,
             UserSessionService userSessionService,
             AuthService authService,
-            BotUi botUi
-    ) {
+            BotUi botUi) {
         this.botToken = botToken;
         this.commandHandler = commandHandler;
         this.userSessionService = userSessionService;
@@ -44,16 +44,15 @@ public class MainBot implements SpringLongPollingBot, LongPollingSingleThreadUpd
     }
 
     @Override public String getBotToken() { return botToken; }
-
     @Override public LongPollingUpdateConsumer getUpdatesConsumer() { return this; }
 
     @Override
     public void consume(Update update) {
         try {
-            // 1) Сначала: админские callback-и approve/block
+            // 0) Перехват админских callback-ов approve/block
             if (tryHandleAuthCallback(update)) return;
 
-            // 2) Потом: общий доступ (whitelist)
+            // 1) whitelist
             Long chatId = extractChatId(update);
             if (chatId != null) {
                 String firstName = extractFirstName(update);
@@ -62,7 +61,6 @@ public class MainBot implements SpringLongPollingBot, LongPollingSingleThreadUpd
                 var auth = authService.checkOrBootstrap(chatId, firstName, username);
 
                 if (!auth.allowed()) {
-                    // notifyAdmins == true только когда PENDING создан впервые (чтобы не спамить)
                     if (auth.notifyAdmins()) {
                         notifyAdminsAccessRequest(chatId, firstName, username);
                     }
@@ -71,7 +69,7 @@ public class MainBot implements SpringLongPollingBot, LongPollingSingleThreadUpd
                 }
             }
 
-            // 3) Дальше всё как было
+            // 2) дальше как было
             userSessionService.touchFromUpdate(update);
             commandHandler.handle(update);
 
@@ -91,7 +89,6 @@ public class MainBot implements SpringLongPollingBot, LongPollingSingleThreadUpd
         String adminFirstName = cb.getFrom() != null ? cb.getFrom().getFirstName() : null;
         String adminUsername = cb.getFrom() != null ? cb.getFrom().getUserName() : null;
 
-        // Проверка, что нажимающий — реально админ
         var adminAuth = authService.checkOrBootstrap(adminChatId, adminFirstName, adminUsername);
         if (!adminAuth.allowed() || adminAuth.role() != UserRole.ADMIN) {
             botUi.sendText(adminChatId, "⛔ Нет прав.");
@@ -127,14 +124,15 @@ public class MainBot implements SpringLongPollingBot, LongPollingSingleThreadUpd
                 + "chatId: " + chatId;
 
         InlineKeyboardMarkup kb = InlineKeyboardMarkup.builder()
-                .keyboard(List.of(List.of(
-                        InlineKeyboardButton.builder().text("✅ Approve").callbackData(AuthCb.approve(chatId)).build(),
-                        InlineKeyboardButton.builder().text("⛔ Block").callbackData(AuthCb.block(chatId)).build()
-                )))
+                .keyboard(List.of(
+                        new InlineKeyboardRow(
+                                InlineKeyboardButton.builder().text("✅ Approve").callbackData(AuthCb.approve(chatId)).build(),
+                                InlineKeyboardButton.builder().text("⛔ Block").callbackData(AuthCb.block(chatId)).build()
+                        )
+                ))
                 .build();
 
         for (Long adminId : authService.adminChatIds()) {
-            // нужен метод BotUi: sendText(chatId, text, kb)
             botUi.sendText(adminId, text, kb);
         }
     }
@@ -169,7 +167,6 @@ public class MainBot implements SpringLongPollingBot, LongPollingSingleThreadUpd
         return null;
     }
 
-    // Вложенный helper — можно вынести в отдельный файл
     static final class AuthCb {
         static String approve(long chatId) { return "AUTH:APPROVE:" + chatId; }
         static String block(long chatId) { return "AUTH:BLOCK:" + chatId; }
