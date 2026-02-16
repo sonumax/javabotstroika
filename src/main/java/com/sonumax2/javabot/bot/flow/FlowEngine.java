@@ -1,7 +1,6 @@
 package com.sonumax2.javabot.bot.flow;
 
 import com.sonumax2.javabot.bot.ui.BotUi;
-import com.sonumax2.javabot.bot.ui.KeyboardService;
 import com.sonumax2.javabot.bot.ui.PanelMode;
 import com.sonumax2.javabot.domain.draft.OpDraftBase;
 import com.sonumax2.javabot.domain.draft.service.DraftService;
@@ -18,11 +17,11 @@ public class FlowEngine {
     private final DraftService drafts;
     private final FlowServices services;
 
-    public FlowEngine(BotUi ui, KeyboardService keyboardService, UserSessionService session, DraftService drafts) {
+    public FlowEngine(BotUi ui, UserSessionService session, DraftService drafts, FlowServices services) {
         this.ui = ui;
         this.session = session;
         this.drafts = drafts;
-        this.services = new FlowServices(ui, keyboardService, session, drafts);
+        this.services = services;
     }
 
     public <D extends OpDraftBase> void handle(Update update, FlowDefinition<D> def) {
